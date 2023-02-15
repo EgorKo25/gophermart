@@ -3,6 +3,9 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
+	"gophermart/internal/storage"
 	"log"
 	"time"
 
@@ -20,16 +23,14 @@ func NewUserDB(cfg *config.Config) *UserDB {
 
 	ctx := context.Background()
 
-	databaseAddr := cfg.Address + ":" + cfg.Port
-
-	db, err := sql.Open("pgx", databaseAddr)
+	db, err := sql.Open("pgx", cfg.DB)
 	if err != nil {
 		log.Println("Не возожно подключиться к бд: ", err)
 	}
 
 	err = createAllTablesWithContext(ctx, db)
 	if err != nil {
-		log.Println("Не удалось создать необходимые таблицы: ", err)
+		log.Println(err)
 	}
 
 	return &UserDB{
@@ -50,9 +51,33 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 	for _, query := range queries {
 		r, err := db.ExecContext(childCtx, query)
 		if err != nil {
-			log.Println("Не удалось создать необходимые таблицы в базе данных. \nОшибка: ", err, "\nОтвет базы данных: ", r)
-			return err
+			return errors.New(fmt.Sprintf("не удалось создать необходимые таблицы в базе данных. \nОшибка: %s\nОтвет базы данных: %s", err, r))
 		}
+	}
+
+	return nil
+}
+
+func (db *UserDB) InsertNewUserWithContext(ctx context.Context, user *storage.User) error {
+	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
+	if db.db == nil {
+		return errors.New("отсутствует открытая база данных")
+	}
+
+	query := `INSERT INTO users (id, firstname, lastname, login, passwd)
+							VALUES(@id, @firstname, @lastname, @login, @passwd);`
+
+	r, err := db.db.ExecContext(childCtx, query,
+		sql.Named("id", user.Firstname),
+		sql.Named("firstname", user.Firstname),
+		sql.Named("lastname", user.Lastname),
+		sql.Named("login", user.Login),
+		sql.Named("passwd", user.Passwd),
+	)
+	if err != nil {
+		errors.New(fmt.Sprintf("не удалось отправить данные в базу данных.\n Ошибка: %s\nОтвет базы данных: %s", err, r))
 	}
 
 	return nil
