@@ -18,11 +18,11 @@ func NewConfig() *Config {
 		"Адрес, на котором располагается сервер",
 	)
 	flag.StringVar(&cfg.DB,
-		"d", "",
+		"d", "postgresql://localhost:5432/postgres",
 		"Адрес базы данных с которой работает сервер",
 	)
-	flag.StringVar(&cfg.DB,
-		"d", "8080",
+	flag.StringVar(&cfg.Port,
+		"p", "8080",
 		"Порт на котором работает сервер",
 	)
 	flag.Parse()
