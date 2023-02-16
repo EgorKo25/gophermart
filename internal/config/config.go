@@ -15,8 +15,6 @@ type Config struct {
 func NewConfig() *Config {
 	var cfg Config
 
-	_ = env.Parse(cfg)
-
 	var secret string
 
 	flag.StringVar(&cfg.Address,
@@ -32,6 +30,8 @@ func NewConfig() *Config {
 		"Ключ для шифрования куки",
 	)
 	flag.Parse()
+
+	_ = env.Parse(cfg)
 
 	cfg.SecretCookieKey, _ = hex.DecodeString(secret)
 
