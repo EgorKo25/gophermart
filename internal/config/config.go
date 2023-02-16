@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	Address         string `env:"ADDRESS"`
-	DB              string `env:"DB" default:"postgresql://localhost:5432/postgres"`
+	Address         string `env:"RUN_ADDRESS"`
+	DB              string `env:"DATABASE_URI"`
 	SecretCookieKey []byte `env:"KEY"`
 }
 
