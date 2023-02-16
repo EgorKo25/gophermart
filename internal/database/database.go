@@ -66,12 +66,9 @@ func (d *UserDB) InsertUserWithContext(ctx context.Context, user *storage.User) 
 		return errors.New("отсутствует открытая база данных")
 	}
 
-	query := `INSERT INTO users (login, passwd)
-				VALUES(@login, @passwd);`
-
-	r, err := d.db.ExecContext(childCtx, query,
-		sql.Named("login", user.Login),
-		sql.Named("passwd", user.Passwd),
+	r, err := d.db.ExecContext(childCtx, "INSERT INTO users (login, passwd) VALUES($1, $2);",
+		user.Login,
+		user.Passwd,
 	)
 	if err != nil {
 		return errors.New(fmt.Sprintf("не удалось отправить данные в базу данных.\n Ошибка: %s\nОтвет базы данных: %s", err, r))
@@ -84,14 +81,15 @@ func (d *UserDB) CheckUserWithContext(ctx context.Context, user *storage.User) e
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	query := `SELECT EXISTS(SELECT login FROM users WHERE login = @login, passwd = @passwd)`
+	query := "SELECT EXISTS(SELECT * FROM users WHERE login = $1 AND passwd = $2)"
 
 	r, err := d.db.ExecContext(childCtx, query,
-		sql.Named("login", user.Login),
-		sql.Named("passwd", user.Passwd),
+		user.Login,
+		user.Passwd,
 	)
 	if err != nil {
-		return errors.New(fmt.Sprintf("не удалось отправить данные в базу данных.\n Ошибка: %s\nОтвет базы данных: %s", err, r))
+		error := fmt.Sprintf("не удалось отправить данные в базу данных.\n Ошибка: %s\nОтвет базы данных: %s", err, r)
+		return errors.New(error)
 	}
 
 	result, _ := r.RowsAffected()

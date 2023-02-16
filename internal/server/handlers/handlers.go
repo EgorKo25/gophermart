@@ -113,24 +113,24 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	cookiesAll := r.Cookies()
 
-	_, err = h.coockies.ReadEncrypt(r, cookiesAll[0].Name, h.coockies.Key)
-	if err != nil {
-		switch err {
-		case cookies.ErrInvalidValue:
-			log.Printf("Ошибка: %e", errors.New("куки изменены"))
-			w.WriteHeader(http.StatusBadRequest)
-
-		case http.ErrNoCookie:
-			err = h.db.CheckUserWithContext(ctx, &user)
-			if err != nil {
-				log.Printf("Ошибка: %e", err)
-				w.WriteHeader(http.StatusUnauthorized)
-			}
+	if len(cookiesAll) == 0 {
+		err = h.db.CheckUserWithContext(ctx, &user)
+		if err != nil {
+			log.Printf("Ошибка: %e", err)
+			w.WriteHeader(http.StatusUnauthorized)
+			return
 		}
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+	_, err = h.coockies.ReadEncrypt(r, cookiesAll[0].Name, h.coockies.Key)
+	if err == cookies.ErrInvalidValue {
+
+		log.Printf("Ошибка: %e", errors.New("куки изменены"))
+		w.WriteHeader(http.StatusBadRequest)
 
 	}
 
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
