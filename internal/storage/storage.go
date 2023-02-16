@@ -1,12 +1,8 @@
 package storage
 
 type User struct {
-	Firstname string
-	Lastname  string
-	Login     string
-	Passwd    string
-	Orders    []Order
-	Balance   float64
+	Login  string `json:"login"`
+	Passwd string `json:"passwd"`
 }
 
 type Order struct {
@@ -15,12 +11,10 @@ type Order struct {
 	Balls     float64
 }
 
-func NewUser(firstname string, lastname string, login string, passwd string) *User {
+func NewUser(login string, passwd string) *User {
 
 	return &User{
-		Firstname: firstname,
-		Lastname:  lastname,
-		Login:     login,
-		Passwd:    passwd,
+		Login:  login,
+		Passwd: passwd,
 	}
 }
