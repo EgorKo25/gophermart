@@ -24,7 +24,7 @@ func NewConfig() *Config {
 		"Адрес, на котором располагается сервер",
 	)
 	flag.StringVar(&cfg.DB,
-		"d", "postgresql://localhost:5432/postgres",
+		"d", "postgresql://localhost:5432/gofermart",
 		"Адрес базы данных с которой работает сервер",
 	)
 	flag.StringVar(&secret,
