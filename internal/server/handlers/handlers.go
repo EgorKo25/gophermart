@@ -105,10 +105,12 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	err = json.Unmarshal(body, &user)
-	if err != nil {
-		log.Printf("Ошибка перевода из формата json: \n%e", err)
-		w.WriteHeader(http.StatusBadRequest)
+	if len(body) > 0 {
+		err = json.Unmarshal(body, &user)
+		if err != nil {
+			log.Printf("Ошибка перевода из формата json: \n%e", err)
+			w.WriteHeader(http.StatusBadRequest)
+		}
 	}
 
 	cookiesAll := r.Cookies()
