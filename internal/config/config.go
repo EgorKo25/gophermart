@@ -10,6 +10,7 @@ type Config struct {
 	Address         string `env:"RUN_ADDRESS"`
 	DB              string `env:"DATABASE_URI"`
 	SecretCookieKey []byte `env:"KEY"`
+	BlackBox        string `env:"ACCRUAL_SYSTEM_ADDRESS"`
 }
 
 func NewConfig() *Config {
@@ -25,6 +26,10 @@ func NewConfig() *Config {
 	flag.StringVar(&cfg.DB,
 		"d", "",
 		"Адрес базы данных с которой работает сервер",
+	)
+	flag.StringVar(&cfg.BlackBox,
+		"r", "",
+		"Адрес черного ящика, с которой работает сервер",
 	)
 	flag.StringVar(&secret,
 		"k", " 7de5a1a5ae85e3aef5376333c3410ca984ef56f0c8082f9d6703414c01affect3",
