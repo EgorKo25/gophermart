@@ -16,14 +16,14 @@ import (
 )
 
 type Handler struct {
-	db            *database.UserDB
-	coockieFormat *cookies.CoockieFormat
+	db      *database.UserDB
+	coockie *cookies.CookieObj
 }
 
-func NewHandler(db *database.UserDB, format *cookies.CoockieFormat) *Handler {
+func NewHandler(db *database.UserDB, cookies *cookies.CookieObj) *Handler {
 	return &Handler{
-		db:            db,
-		coockieFormat: format,
+		db:      db,
+		coockie: cookies,
 	}
 }
 
@@ -46,15 +46,20 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Ошибка чтения тела запроса: \n%e", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 	defer func() {
 		err = r.Body.Close()
+		if err != nil {
+			log.Printf("Не удалось закрыть тело запроса: \n%e", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
 	}()
 
 	err = json.Unmarshal(body, &user)
 	if err != nil {
 		log.Printf("Ошибка перевода из формата json: \n%e", err)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 
 	cookie := http.Cookie{
@@ -70,6 +75,8 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Что-то не так:\n%e", errors.New("ошибка упаковки в gob"))
 	}
+
+	h.coockie.WriteEncrypt(w, cookie)
 	w.WriteHeader(http.StatusOK)
 }
 

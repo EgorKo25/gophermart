@@ -17,9 +17,9 @@ func main() {
 
 	db := database.NewUserDB(cfg)
 
-	coockieFormat := cookies.NewCoockieFormat(cfg.SecretCookieKey)
+	cookie := cookies.NewCookieObj(cfg.SecretCookieKey)
 
-	handler := handlers.NewHandler(db, coockieFormat)
+	handler := handlers.NewHandler(db, cookie)
 
 	myRouter := router.NewRouter(handler)
 

@@ -13,12 +13,12 @@ import (
 	"net/http"
 )
 
-type CoockieFormat struct {
+type CookieObj struct {
 	key []byte
 }
 
-func NewCoockieFormat(key []byte) *CoockieFormat {
-	return &CoockieFormat{
+func NewCookieObj(key []byte) *CookieObj {
+	return &CookieObj{
 		key: key,
 	}
 }
@@ -28,7 +28,7 @@ var (
 	ErrInvalidValue = errors.New("неверное значение куки")
 )
 
-func (c *CoockieFormat) Write(w http.ResponseWriter, cookie http.Cookie) error {
+func (c *CookieObj) Write(w http.ResponseWriter, cookie http.Cookie) error {
 
 	cookie.Value = base64.URLEncoding.EncodeToString([]byte(cookie.Value))
 
@@ -41,7 +41,7 @@ func (c *CoockieFormat) Write(w http.ResponseWriter, cookie http.Cookie) error {
 	return nil
 }
 
-func (c *CoockieFormat) Read(r *http.Request, name string) (string, error) {
+func (c *CookieObj) Read(r *http.Request, name string) (string, error) {
 
 	cookie, err := r.Cookie(name)
 	if err != nil {
@@ -59,7 +59,7 @@ func (c *CoockieFormat) Read(r *http.Request, name string) (string, error) {
 	return string(value), nil
 }
 
-func (c *CoockieFormat) signMyDate(name, value string) string {
+func (c *CookieObj) signMyDate(name, value string) string {
 
 	hm := hmac.New(sha256.New, c.key)
 	hm.Write([]byte(name))
@@ -71,7 +71,7 @@ func (c *CoockieFormat) signMyDate(name, value string) string {
 	return value
 }
 
-func (c *CoockieFormat) WriteEncrypt(w http.ResponseWriter, cookie http.Cookie) error {
+func (c *CookieObj) WriteEncrypt(w http.ResponseWriter, cookie http.Cookie) error {
 
 	cookie.Value = c.signMyDate(cookie.Name, cookie.Value)
 

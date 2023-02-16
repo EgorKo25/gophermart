@@ -2,7 +2,7 @@ package storage
 
 type User struct {
 	Login  string `json:"login"`
-	Passwd string `json:"passwd"`
+	Passwd string `json:"password"`
 }
 
 type Order struct {
