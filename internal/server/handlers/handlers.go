@@ -42,7 +42,7 @@ func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var buffer bytes.Buffer
 	var user storage.User
-	var ctx context.Context
+	ctx := context.Background()
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -90,7 +90,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	var user storage.User
-	var ctx context.Context
+	ctx := context.Background()
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
