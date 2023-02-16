@@ -28,6 +28,7 @@ func NewUserDB(cfg *config.Config) *UserDB {
 		log.Println("Не возожно подключиться к бд: ", err)
 	}
 
+	log.Printf("\n%s\n%s\n%s\n%s", db, cfg.DB, cfg.Address, cfg.BlackBox)
 	err = createAllTablesWithContext(ctx, db)
 	if err != nil {
 		log.Println(err)
