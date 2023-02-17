@@ -6,9 +6,8 @@ type User struct {
 }
 
 type Order struct {
-	Title     string
-	UserToken string
-	Balls     float64
+	Number int
+	User   string `json:"omitempty"`
 }
 
 func NewUser(login string, passwd string) *User {

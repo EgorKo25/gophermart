@@ -9,7 +9,7 @@ import (
 type Config struct {
 	Address         string `env:"RUN_ADDRESS"`
 	DB              string `env:"DATABASE_URI"`
-	SecretCookieKey []byte `env:"KEY"`
+	SecretCookieKey []byte
 	BlackBox        string `env:"ACCRUAL_SYSTEM_ADDRESS"`
 }
 
@@ -17,27 +17,27 @@ func NewConfig() *Config {
 	var cfg Config
 	var secret string
 
+	_ = env.Parse(cfg)
+
 	flag.StringVar(&cfg.Address,
 		"a", "127.0.0.1:8080",
 		"Адрес, на котором располагается сервер",
 	)
 	flag.StringVar(&cfg.DB,
-		"d", "",
+		"d", "postgresql://localhost:5432/gofermart",
 		"Адрес базы данных с которой работает сервер",
 	)
 	flag.StringVar(&cfg.BlackBox,
-		"r", "",
+		"r", "127.0.0.1:8080/get/api/orders/",
 		"Адрес черного ящика, с которой работает сервер",
 	)
 	flag.StringVar(&secret,
-		"k", " 7de5a1a5ae85e3aef5376333c3410ca984ef56f0c8082f9d6703414c01affect3",
+		"k", "BGCbNg8sreipgLH2",
 		"Ключ для шифрования куки",
 	)
 	flag.Parse()
 
-	_ = env.Parse(cfg)
-
-	cfg.SecretCookieKey, _ = hex.DecodeString(secret)
+	cfg.SecretCookieKey = []byte(hex.EncodeToString([]byte(secret)))
 
 	return &cfg
 }

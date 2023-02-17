@@ -19,7 +19,7 @@ func NewRouter(handler *handlers.Handler) chi.Router {
 
 		r.Post("/api/user/register", handler.Register)
 		r.Post("/api/user/login", handler.Login)
-		r.Post("/api/user/orders", handler.Orders)
+		r.Post("/api/user/orders", handler.Order)
 		r.Post("/api/user/withdraw", handler.Withdraw)
 
 	})
