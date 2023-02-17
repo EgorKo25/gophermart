@@ -133,6 +133,22 @@ func (c *CookieObj) ReadEncrypt(r *http.Request, name string, secretKey []byte) 
 		return "", ErrInvalidValue
 	}
 
+	if len(value) < sha256.Size {
+		return "", ErrInvalidValue
+	}
+
+	signature := value[:sha256.Size]
+	value = value[sha256.Size:]
+
+	mac := hmac.New(sha256.New, secretKey)
+	mac.Write([]byte(name))
+	mac.Write([]byte(value))
+	expectedSignature := mac.Sum(nil)
+
+	if !hmac.Equal([]byte(signature), expectedSignature) {
+		return "", ErrInvalidValue
+	}
+
 	if expectedName != name {
 		return "", ErrInvalidValue
 	}

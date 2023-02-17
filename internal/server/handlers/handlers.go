@@ -184,11 +184,13 @@ func (h *Handler) checkCookie(ctx context.Context, r *http.Request, user *storag
 func (h *Handler) Order(w http.ResponseWriter, r *http.Request) {
 
 	var order storage.Order
+	var body []byte
 	ctx := context.Background()
 
 	body, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
 
-	order.Number, err = strconv.Atoi(string(body))
+	order.Number, _ = strconv.Atoi(fmt.Sprintf("%s", body))
 
 	order.User, err = h.checkCookie(ctx, r, nil)
 

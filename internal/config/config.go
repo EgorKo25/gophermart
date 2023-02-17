@@ -3,6 +3,7 @@ package config
 import (
 	"encoding/hex"
 	"flag"
+
 	"github.com/caarlos0/env/v6"
 )
 

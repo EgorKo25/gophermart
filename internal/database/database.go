@@ -34,7 +34,6 @@ func NewUserDB(cfg *config.Config) *UserDB {
 		log.Println("Не возожно подключиться к бд: ", err)
 	}
 
-	log.Printf("\n\n%s\n%s\n%s", cfg.DB, cfg.Address, cfg.BlackBox)
 	err = createAllTablesWithContext(ctx, db)
 	if err != nil {
 		log.Println(err)
@@ -52,7 +51,7 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 
 	queries := []string{
 		"CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, user_login VARCHAR(20), passwd VARCHAR(20));",
-		"CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, user_login VARCHAR(20), order_number VARCHAR(100));",
+		"CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, user_login VARCHAR(20), order_number BIGINT);",
 	}
 
 	for _, query := range queries {
@@ -85,6 +84,7 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 
 	query := "SELECT EXISTS(SELECT * FROM orders WHERE user_login = $1 AND order_number = $2)"
 
+	log.Println(order.Number, order.User)
 	r, err := d.db.ExecContext(childCtx, query,
 		order.User,
 		order.Number,
