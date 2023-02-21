@@ -12,6 +12,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	url2 "net/url"
 	"strconv"
 	"time"
 
@@ -232,7 +233,10 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 	dur := 0
 
 	ctx := context.Background()
-	url := h.cfg.BlackBox + strconv.Itoa(order.Number) + "/"
+	url, err := url2.JoinPath(h.cfg.BlackBox, strconv.Itoa(order.Number))
+	if err != nil {
+		log.Printf("%s", err)
+	}
 
 	timer := time.NewTimer(time.Duration(dur))
 	for {
