@@ -199,7 +199,7 @@ func (c *CookieManager) CheckCookie(user *storage.User, cookieAll []*http.Cookie
 				err = ErrCipher
 			case ErrInvalidValue:
 				err = ErrInvalidValue
-			default:
+			case nil:
 				return value, nil
 			}
 		}
