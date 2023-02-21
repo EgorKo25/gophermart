@@ -66,7 +66,7 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-func (d *UserDB) GetAllUserOrders(ctx context.Context) (result []string, err error) {
+func (d *UserDB) GetAllUserOrders(ctx context.Context) ([]string, error) {
 
 	var rows *sql.Rows
 
@@ -77,13 +77,41 @@ func (d *UserDB) GetAllUserOrders(ctx context.Context) (result []string, err err
 
 	query := "SELECT * FROM orders"
 
-	rows, err = d.db.QueryContext(childCtx, query)
+	rows, err := d.db.QueryContext(childCtx, query)
 	if err != nil {
 		return nil, ErrConnectToDB
 	}
 	//TODO:ДОДЕЛВАЙ
-	result, err = rows.Columns()
-	log.Println(result)
+	cols, err := rows.Columns()
+	if err != nil {
+		fmt.Println("Failed to get columns", err)
+	}
+
+	// Result is your slice string.
+	rawResult := make([][]byte, len(cols))
+	result := make([]string, len(cols))
+
+	dest := make([]interface{}, len(cols)) // A temporary interface{} slice
+	for i, _ := range rawResult {
+		dest[i] = &rawResult[i] // Put pointers to each string in the interface slice
+	}
+
+	for rows.Next() {
+		err = rows.Scan(dest...)
+		if err != nil {
+			fmt.Println("Failed to scan row", err)
+		}
+
+		for i, raw := range rawResult {
+			if raw == nil {
+				result[i] = "\\N"
+			} else {
+				result[i] = string(raw)
+			}
+		}
+
+		fmt.Printf("%#v\n", result)
+	}
 	return result, nil
 }
 
