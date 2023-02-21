@@ -232,7 +232,7 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 	dur := 0
 
 	ctx := context.Background()
-	url := h.cfg.BlackBox + strconv.Itoa(order.Number)
+	url := h.cfg.BlackBox + strconv.Itoa(order.Number) + "/"
 
 	timer := time.NewTimer(time.Duration(dur))
 	for {
@@ -241,7 +241,7 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 			r, err := http.Get(url)
 
 			if err != nil {
-				log.Printf("%s", ErrBlackBox)
+				log.Printf("%s\n%s", ErrBlackBox, err)
 				return ErrBlackBox
 			}
 
