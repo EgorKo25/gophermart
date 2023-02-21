@@ -122,15 +122,15 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	_, err = h.cookies.CheckCookie(&user, cookieA)
 
 	switch {
-	case err == cookies.ErrNoCookie:
-		w.WriteHeader(http.StatusUnauthorized)
+	case err == database.ErrConnectToDB:
+		log.Printf("Ошибка: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	case err == database.ErrRowDoesntExists:
 		w.WriteHeader(http.StatusUnauthorized)
 		return
-	case err == database.ErrConnectToDB:
-		log.Printf("Ошибка: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
+	case err == cookies.ErrNoCookie:
+		w.WriteHeader(http.StatusUnauthorized)
 		return
 	case err == cookies.ErrInvalidValue:
 		w.WriteHeader(http.StatusBadRequest)
