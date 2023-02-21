@@ -31,10 +31,11 @@ type Handler struct {
 	cfg     *config.Config
 }
 
-func NewHandler(db *database.UserDB, cookies *cookies.CookieManager) *Handler {
+func NewHandler(db *database.UserDB, cookies *cookies.CookieManager, cfg *config.Config) *Handler {
 	return &Handler{
 		db:      db,
 		cookies: cookies,
+		cfg:     cfg,
 	}
 }
 
@@ -225,11 +226,10 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handler) checkOrderStatus(order *storage.Order) (err error) {
+func (h *Handler) checkOrderStatus(order *storage.Order) error {
 
-	var r *http.Response
 	var body []byte
-	var dur int
+	dur := 0
 
 	ctx := context.Background()
 	url := h.cfg.BlackBox + strconv.Itoa(order.Number)
@@ -238,7 +238,7 @@ func (h *Handler) checkOrderStatus(order *storage.Order) (err error) {
 	for {
 		select {
 		case <-timer.C:
-			r, err = http.Get(url)
+			r, err := http.Get(url)
 
 			if err != nil {
 				log.Printf("%s", ErrBlackBox)
@@ -271,7 +271,7 @@ func (h *Handler) checkOrderStatus(order *storage.Order) (err error) {
 				timer = time.NewTimer(time.Duration(dur))
 			default:
 				h.db.SetStatus(ctx, order)
-				return
+				return nil
 			}
 		}
 	}

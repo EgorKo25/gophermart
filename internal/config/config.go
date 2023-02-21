@@ -27,7 +27,7 @@ func NewConfig() *Config {
 		"Адрес базы данных с которой работает сервер",
 	)
 	flag.StringVar(&cfg.BlackBox,
-		"r", "127.0.0.1:8080/get/api/orders/",
+		"r", "get/api/orders/",
 		"Адрес черного ящика, с которой работает сервер",
 	)
 	flag.StringVar(&secret,

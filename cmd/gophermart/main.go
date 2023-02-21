@@ -22,7 +22,7 @@ func main() {
 
 	cookie := cookies.NewCookieManager(cfg.SecretCookieKey, db)
 
-	handler := handlers.NewHandler(db, cookie)
+	handler := handlers.NewHandler(db, cookie, cfg)
 
 	myRouter := router.NewRouter(handler)
 
