@@ -130,6 +130,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	case err == cookies.ErrNoCookie:
+		w.Write([]byte(fmt.Sprintf("%s", cookies.ErrNoCookie)))
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	case err == cookies.ErrInvalidValue:
