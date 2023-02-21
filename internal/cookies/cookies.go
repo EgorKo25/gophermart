@@ -191,17 +191,6 @@ func (c *CookieManager) CheckCookie(user *storage.User, cookieAll []*http.Cookie
 
 	ctx := context.Background()
 
-	if user != nil {
-		err := c.db.CheckUserWithContext(ctx, user)
-		switch err {
-		case database.ErrConnectToDB:
-			return "", database.ErrConnectToDB
-
-		case database.ErrRowDoesntExists:
-			return "", database.ErrRowDoesntExists
-		}
-	}
-
 	for _, cookie := range cookieAll {
 		if cookie != nil {
 			value, err := c.ReadEncrypt(cookie, cookie.Name, c.Key)
@@ -213,6 +202,17 @@ func (c *CookieManager) CheckCookie(user *storage.User, cookieAll []*http.Cookie
 			default:
 				return value, nil
 			}
+		}
+	}
+
+	if user != nil {
+		err := c.db.CheckUserWithContext(ctx, user)
+		switch err {
+		case database.ErrConnectToDB:
+			return "", database.ErrConnectToDB
+
+		case database.ErrRowDoesntExists:
+			return "", database.ErrRowDoesntExists
 		}
 	}
 
