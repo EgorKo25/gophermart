@@ -203,7 +203,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Printf("number: %d", order.Number)
+	log.Println(order)
 	order.Status = "NEW"
 	order.Accrual = 0.0
 
