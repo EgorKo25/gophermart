@@ -213,7 +213,10 @@ func (c *CookieManager) CheckCookie(user *storage.User, cookieAll []*http.Cookie
 
 		case database.ErrRowDoesntExists:
 			return "", database.ErrRowDoesntExists
+		case nil:
+			return "", nil
 		}
+
 	}
 
 	return "", ErrNoCookie
