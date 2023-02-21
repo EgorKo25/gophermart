@@ -89,7 +89,6 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	case nil:
 		http.SetCookie(w, cookie)
-		log.Println(cookie)
 		w.WriteHeader(http.StatusOK)
 		return
 	default:
