@@ -155,6 +155,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	case nil:
 		http.SetCookie(w, cookie)
+		tmp, _ := json.Marshal(&user)
+		w.Write(tmp)
 		w.WriteHeader(http.StatusOK)
 		return
 	default:
