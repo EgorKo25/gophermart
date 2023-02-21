@@ -52,8 +52,8 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 	defer cancel()
 
 	queries := []string{
-		"CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, user_login VARCHAR(20), passwd VARCHAR(20));",
-		"CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, user_login VARCHAR(20), order_number BIGINT);",
+		"CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, user_login VARCHAR(100), passwd VARCHAR(100));",
+		"CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, user_login VARCHAR(100), order_number BIGINT);",
 	}
 
 	for _, query := range queries {
