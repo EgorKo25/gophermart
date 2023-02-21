@@ -66,16 +66,18 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (result []string, err error) {
+func (d *UserDB) GetAllUserOrders(ctx context.Context) (result []string, err error) {
 
 	var rows *sql.Rows
 
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	query := "SELECT * FROM orders WHERE user_login = $1"
+	//query := "SELECT * FROM orders WHERE user_login = $1"
 
-	rows, err = d.db.QueryContext(childCtx, query, user.Login)
+	query := "SELECT * FROM orders"
+
+	rows, err = d.db.QueryContext(childCtx, query)
 	if err != nil {
 		return nil, ErrConnectToDB
 	}

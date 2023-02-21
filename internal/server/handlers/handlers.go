@@ -242,25 +242,28 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
 	var err error
-	var user storage.User
 	var ordersList []string
 
-	cookie := r.Cookies()
-
-	user.Login, err = h.cookies.CheckCookie(nil, cookie)
-	switch err {
-	case cookies.ErrNoCookie:
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	case cookies.ErrCipher:
+	//cookie := r.Cookies()
+	/*
+		user.Login, err = h.cookies.CheckCookie(nil, cookie)
+		switch err {
+		case cookies.ErrNoCookie:
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		case cookies.ErrCipher:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		case cookies.ErrInvalidValue:
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+	*/
+	ordersList, err = h.db.GetAllUserOrders(ctx)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
-	case cookies.ErrInvalidValue:
-		w.WriteHeader(http.StatusBadRequest)
-		return
 	}
-
-	ordersList, err = h.db.GetAllUserOrders(ctx, &user)
 
 	log.Println(ordersList)
 	w.WriteHeader(http.StatusOK)
