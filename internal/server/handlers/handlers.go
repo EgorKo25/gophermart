@@ -155,6 +155,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	case nil:
 		http.SetCookie(w, cookie)
+		w.WriteHeader(http.StatusOK)
+		return
 	default:
 		log.Printf("неизвестная ошибка %s", err)
 		return
