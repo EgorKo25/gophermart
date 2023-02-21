@@ -77,7 +77,7 @@ func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (resu
 
 	rows, err = d.db.QueryContext(childCtx, query, user.Login)
 	if err != nil {
-		return nil, nil
+		return nil, ErrConnectToDB
 	}
 	//TODO:ДОДЕЛВАЙ
 	result, err = rows.Columns()

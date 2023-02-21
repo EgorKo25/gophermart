@@ -240,11 +240,11 @@ func (h *Handler) Withdraw(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
-
-	//ctx := context.Background()
+	ctx := context.Background()
 
 	var err error
-	var user *storage.User
+	var user storage.User
+	var ordersList []string
 
 	cookie := r.Cookies()
 
@@ -261,4 +261,8 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	ordersList, err = h.db.GetAllUserOrders(ctx, &user)
+
+	log.Println(ordersList)
+	w.WriteHeader(http.StatusOK)
 }
