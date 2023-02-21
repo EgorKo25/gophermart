@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	Address         string `env:"RUN_ADDRESS"`
-	DB              string `env:"DATABASE_URI"`
+	DB              string `env:"DATABASE_URI" default:"postgresql://postgres:871023@0.0.0.0:5432/gophermart_db?sslmode=disable"`
 	SecretCookieKey []byte
 	BlackBox        string `env:"ACCRUAL_SYSTEM_ADDRESS"`
 }
