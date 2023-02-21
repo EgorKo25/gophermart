@@ -232,7 +232,7 @@ func (h *Handler) checkOrderStatus(order *storage.Order) (err error) {
 	var dur int
 
 	ctx := context.Background()
-	url := h.cfg.BlackBox + fmt.Sprintf("%d", order.Number)
+	url := h.cfg.BlackBox + strconv.Itoa(order.Number)
 
 	timer := time.NewTimer(time.Duration(dur))
 	for {
