@@ -191,6 +191,9 @@ func (c *CookieManager) CheckCookie(user *storage.User, cookieAll []*http.Cookie
 
 	ctx := context.Background()
 
+	log.Println(user)
+	log.Println(cookieAll)
+
 	for _, cookie := range cookieAll {
 		if cookie != nil {
 			value, err := c.ReadEncrypt(cookie, cookie.Name, c.Key)
