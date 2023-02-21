@@ -196,9 +196,9 @@ func (c *CookieManager) CheckCookie(user *storage.User, cookieAll []*http.Cookie
 			value, err := c.ReadEncrypt(cookie, cookie.Name, c.Key)
 			switch err {
 			case ErrCipher:
-				return "", ErrCipher
+				err = ErrCipher
 			case ErrInvalidValue:
-				return "", ErrInvalidValue
+				err = ErrInvalidValue
 			default:
 				return value, nil
 			}
