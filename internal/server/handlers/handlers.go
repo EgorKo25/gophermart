@@ -54,12 +54,14 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Ошибка чтения тела запроса: \n%e", err)
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	defer func() {
 		err = r.Body.Close()
 		if err != nil {
 			log.Printf("Не удалось закрыть тело запроса: \n%e", err)
 			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 	}()
 
@@ -67,12 +69,14 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("%e", ErrUnmarshal)
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 
 	err = h.db.InsertUserWithContext(ctx, &user)
 	if err != nil {
 		log.Printf("Ошибка при обращении в бд: \n%e", err)
 		w.WriteHeader(http.StatusConflict)
+		return
 	}
 
 	cookie, err = h.cookies.GetCookie(&user)
@@ -85,6 +89,8 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	case nil:
 		http.SetCookie(w, cookie)
+		w.WriteHeader(http.StatusOK)
+		return
 	default:
 		log.Printf("неизвестная ошибка %s", err)
 		return
@@ -133,11 +139,11 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	case err == cookies.ErrNoCookie:
-		w.Write([]byte(fmt.Sprintf("%s", cookies.ErrNoCookie)))
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	case err == cookies.ErrInvalidValue:
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	case err != nil:
 		log.Printf("Ошибка: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
@@ -155,8 +161,6 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		return
 	case nil:
 		http.SetCookie(w, cookie)
-		tmp, _ := json.Marshal(&user)
-		w.Write(tmp)
 		w.WriteHeader(http.StatusOK)
 		return
 	default:
