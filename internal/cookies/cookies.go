@@ -193,6 +193,7 @@ func (c *CookieManager) CheckCookie(user *storage.User, cookieAll []*http.Cookie
 
 	log.Println(user)
 	log.Println(cookieAll)
+	log.Println()
 
 	for _, cookie := range cookieAll {
 		if cookie != nil {
