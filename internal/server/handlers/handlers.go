@@ -13,6 +13,8 @@ import (
 	"gophermart/internal/cookies"
 	"gophermart/internal/database"
 	"gophermart/internal/storage"
+
+	"github.com/theplant/luhn"
 )
 
 var (
@@ -176,6 +178,11 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	order.Number, err = strconv.Atoi(fmt.Sprintf("%s", body))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	if isValid := luhn.Valid(order.Number); isValid == false {
+		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
