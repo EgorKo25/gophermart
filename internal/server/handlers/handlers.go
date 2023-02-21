@@ -199,6 +199,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cookie := r.Cookies()
+	log.Println(cookie)
 	order.User, err = h.cookies.CheckCookie(nil, cookie)
 
 	switch {
