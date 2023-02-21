@@ -64,6 +64,25 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
+func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (result []string, err error) {
+
+	var rows *sql.Rows
+
+	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
+	query := "SELECT * FROM orders WHERE user_login = $1"
+
+	rows, err = d.db.QueryContext(childCtx, query, user.Login)
+	if err != nil {
+		return nil, nil
+	}
+	//TODO:ДОДЕЛВАЙ
+	result, err = rows.Columns()
+	log.Println(result)
+	return result, nil
+}
+
 func (d *UserDB) InsertOrderWithContext(ctx context.Context, order *storage.Order) error {
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
@@ -78,17 +97,18 @@ func (d *UserDB) InsertOrderWithContext(ctx context.Context, order *storage.Orde
 	return nil
 
 }
+
 func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order) error {
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
 	query := "SELECT EXISTS(SELECT * FROM orders WHERE user_login = $1 AND order_number = $2)"
 
-	log.Println(order.Number, order.User)
 	r, err := d.db.ExecContext(childCtx, query,
 		order.User,
 		order.Number,
 	)
+
 	if err != nil {
 		return ErrConnectToDB
 	}

@@ -17,7 +17,7 @@ func main() {
 
 	db := database.NewUserDB(cfg)
 
-	cookie := cookies.NewCookieObj(cfg.SecretCookieKey)
+	cookie := cookies.NewCookieManager(cfg.SecretCookieKey, db)
 
 	handler := handlers.NewHandler(db, cookie)
 

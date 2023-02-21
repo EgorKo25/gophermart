@@ -1,32 +1,30 @@
 package handlers
 
 import (
-	"bytes"
 	"context"
-	"encoding/gob"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gophermart/internal/cookies"
-	"gophermart/internal/database"
-	"gophermart/internal/storage"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
+
+	"gophermart/internal/cookies"
+	"gophermart/internal/database"
+	"gophermart/internal/storage"
 )
 
 var (
 	ErrUnmarshal = errors.New("ошибка десериализации/сериализации")
-	ErrNoCookie  = errors.New("нет куки")
 )
 
 type Handler struct {
 	db      *database.UserDB
-	cookies *cookies.CookieObj
+	cookies *cookies.CookieManager
 }
 
-func NewHandler(db *database.UserDB, cookies *cookies.CookieObj) *Handler {
+func NewHandler(db *database.UserDB, cookies *cookies.CookieManager) *Handler {
 	return &Handler{
 		db:      db,
 		cookies: cookies,
@@ -47,6 +45,7 @@ func (h *Handler) Balance(w http.ResponseWriter, _ *http.Request) {
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	var user storage.User
+	var cookie *http.Cookie
 	ctx := context.Background()
 
 	body, err := io.ReadAll(r.Body)
@@ -74,40 +73,27 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusConflict)
 	}
 
-	h.getCookie(w, &user)
-
-}
-func (h *Handler) getCookie(w http.ResponseWriter, user *storage.User) {
-	var buffer bytes.Buffer
-	var err error
-
-	cookie := http.Cookie{
-		Name:  fmt.Sprintf("CookieUser%s", user.Login),
-		Value: user.Login,
-
-		Path:     "/",
-		Secure:   true,
-		HttpOnly: true,
-	}
-
-	err = gob.NewEncoder(&buffer).Encode(cookie)
-	if err != nil {
-		log.Printf("Что-то не так:\n%e", errors.New("ошибка упаковки в gob"))
-	}
-
-	err = h.cookies.WriteEncrypt(w, cookie)
-	if err != nil {
-		log.Printf("%e", err)
+	cookie, err = h.cookies.GetCookie(&user)
+	switch err {
+	case cookies.ErrValueTooLong:
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	case cookies.ErrCipher:
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	case nil:
+		http.SetCookie(w, cookie)
+	default:
+		log.Printf("неизвестная ошибка %s", err)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
 }
+
 func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 	var user storage.User
-	ctx := context.Background()
+	var cookie *http.Cookie
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
@@ -130,10 +116,11 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	_, err = h.checkCookie(ctx, r, &user)
+	cookieA := r.Cookies()
+	_, err = h.cookies.CheckCookie(&user, cookieA)
 
 	switch {
-	case err == ErrNoCookie:
+	case err == cookies.ErrNoCookie:
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	case err == database.ErrRowDoesntExists:
@@ -150,52 +137,53 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	default:
-		h.getCookie(w, &user)
-		w.WriteHeader(http.StatusOK)
+	}
+
+	cookie, err = h.cookies.GetCookie(&user)
+	switch err {
+	case cookies.ErrValueTooLong:
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	case cookies.ErrCipher:
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	case nil:
+		http.SetCookie(w, cookie)
+	default:
+		log.Printf("неизвестная ошибка %s", err)
+		return
 	}
 
 }
 
-func (h *Handler) checkCookie(ctx context.Context, r *http.Request, user *storage.User) (string, error) {
-	cookiesAll := r.Cookies()
-
-	if user != nil {
-		err := h.db.CheckUserWithContext(ctx, user)
-		if err != nil {
-			return "", err
-		}
-		return "", nil
-	}
-
-	for _, cookie := range cookiesAll {
-		if cookie != nil {
-			value, err := h.cookies.ReadEncrypt(r, cookie.Name, h.cookies.Key)
-			if err != nil {
-				return "", err
-			}
-			return value, nil
-		}
-	}
-
-	return "", ErrNoCookie
-
-}
-
-func (h *Handler) Order(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 
 	var order storage.Order
 	var body []byte
+	var err error
+
 	ctx := context.Background()
 
-	body, err := io.ReadAll(r.Body)
-	defer r.Body.Close()
+	body, err = io.ReadAll(r.Body)
+	defer func() {
+		err = r.Body.Close()
+		if err != nil {
+			log.Printf("Не удалось закрыть тело запроса: \n%e", err)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}()
 
-	order.Number, _ = strconv.Atoi(fmt.Sprintf("%s", body))
+	order.Number, err = strconv.Atoi(fmt.Sprintf("%s", body))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 
-	order.User, err = h.checkCookie(ctx, r, nil)
+	cookie := r.Cookies()
+	order.User, err = h.cookies.CheckCookie(nil, cookie)
 
 	switch {
-	case err == ErrNoCookie:
+	case err == cookies.ErrNoCookie:
 		w.WriteHeader(http.StatusUnauthorized)
 		return
 	case err == database.ErrRowDoesntExists:
@@ -230,4 +218,28 @@ func (h *Handler) Order(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Withdraw(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
+
+	//ctx := context.Background()
+
+	var err error
+	var user *storage.User
+
+	cookie := r.Cookies()
+
+	user.Login, err = h.cookies.CheckCookie(nil, cookie)
+	switch err {
+	case cookies.ErrNoCookie:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	case cookies.ErrCipher:
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	case cookies.ErrInvalidValue:
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 }
