@@ -9,7 +9,7 @@ import (
 
 type Config struct {
 	Address         string `env:"RUN_ADDRESS"`
-	DB              string `env:"DATABASE_URI" default:"postgresql://postgres:871023@0.0.0.0:5432/gophermart_db?sslmode=disable"`
+	DB              string `env:"DATABASE_URI"`
 	SecretCookieKey []byte
 	BlackBox        string `env:"ACCRUAL_SYSTEM_ADDRESS"`
 }
@@ -23,7 +23,7 @@ func NewConfig() *Config {
 		"Адрес, на котором располагается сервер",
 	)
 	flag.StringVar(&cfg.DB,
-		"d", "postgresql://postgres:871023@0.0.0.0:5432/gophermart_db?sslmode=disable",
+		"d", "postgresql://localhost:5432/gofermart",
 		"Адрес базы данных с которой работает сервер",
 	)
 	flag.StringVar(&cfg.BlackBox,
@@ -36,7 +36,7 @@ func NewConfig() *Config {
 	)
 	flag.Parse()
 
-	_ = env.Parse(cfg)
+	_ = env.Parse(&cfg)
 
 	cfg.SecretCookieKey = []byte(hex.EncodeToString([]byte(secret)))
 
