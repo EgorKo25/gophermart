@@ -101,12 +101,14 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Ошибка чтения тела запроса: \n%e", err)
 		w.WriteHeader(http.StatusBadRequest)
+		return
 	}
 	defer func() {
 		err = r.Body.Close()
 		if err != nil {
 			log.Printf("Не удалось закрыть тело запроса: \n%e", err)
 			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 	}()
 
@@ -115,6 +117,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("Ошибка перевода из формата json: \n%e", err)
 			w.WriteHeader(http.StatusBadRequest)
+			return
 		}
 	}
 
