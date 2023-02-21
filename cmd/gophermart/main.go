@@ -15,7 +15,10 @@ func main() {
 
 	cfg := config.NewConfig()
 
-	db := database.NewUserDB(cfg)
+	db, err := database.NewUserDB(cfg)
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
 
 	cookie := cookies.NewCookieManager(cfg.SecretCookieKey, db)
 

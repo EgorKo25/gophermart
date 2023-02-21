@@ -25,23 +25,25 @@ type UserDB struct {
 	db *sql.DB
 }
 
-func NewUserDB(cfg *config.Config) *UserDB {
+func NewUserDB(cfg *config.Config) (*UserDB, error) {
 
 	ctx := context.Background()
 
 	db, err := sql.Open("pgx", cfg.DB)
 	if err != nil {
 		log.Println("Не возожно подключиться к бд: ", err)
+		return nil, err
 	}
 
 	err = createAllTablesWithContext(ctx, db)
 	if err != nil {
 		log.Println(err)
+		return nil, err
 	}
 
 	return &UserDB{
 		db: db,
-	}
+	}, nil
 }
 
 func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
