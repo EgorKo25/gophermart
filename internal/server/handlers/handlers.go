@@ -204,6 +204,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	order.Status = "NEW"
+	order.Accrual = 0.0
 
 	err = h.db.CheckOrderWithContext(ctx, &order)
 	switch err {
@@ -221,7 +222,6 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-
 }
 
 func (h *Handler) checkOrderStatus(order *storage.Order) (err error) {
