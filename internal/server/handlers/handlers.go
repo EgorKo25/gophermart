@@ -5,25 +5,30 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"gophermart/internal/config"
+	"gophermart/internal/cookies"
+	"gophermart/internal/database"
+	"gophermart/internal/storage"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
-
-	"gophermart/internal/cookies"
-	"gophermart/internal/database"
-	"gophermart/internal/storage"
+	"time"
 
 	"github.com/theplant/luhn"
 )
 
 var (
 	ErrUnmarshal = errors.New("ошибка десериализации/сериализации")
+	ErrBlackBox  = errors.New("ошибка обращения в систему расчета")
+	ErrBodyRead  = errors.New("ошибка чтения ответа")
+	ErrBodyClose = errors.New("неудалось закрыть тело запроса")
 )
 
 type Handler struct {
 	db      *database.UserDB
 	cookies *cookies.CookieManager
+	cfg     *config.Config
 }
 
 func NewHandler(db *database.UserDB, cookies *cookies.CookieManager) *Handler {
@@ -182,7 +187,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	defer func() {
 		err = r.Body.Close()
 		if err != nil {
-			log.Printf("Не удалось закрыть тело запроса: \n%e", err)
+			log.Printf("%s", ErrBodyRead)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}()
@@ -198,27 +203,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := r.Cookies()
-	order.User, err = h.cookies.CheckCookie(nil, cookie)
-
-	switch {
-	case err == cookies.ErrNoCookie:
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	case err == database.ErrRowDoesntExists:
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	case err == database.ErrConnectToDB:
-		log.Printf("Ошибка: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	case err == cookies.ErrInvalidValue:
-		w.WriteHeader(http.StatusBadRequest)
-	case err != nil:
-		log.Printf("Ошибка: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	order.Status = "NEW"
 
 	err = h.db.CheckOrderWithContext(ctx, &order)
 	switch err {
@@ -231,10 +216,64 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	case nil:
 		err = h.db.InsertOrderWithContext(ctx, &order)
 		w.WriteHeader(http.StatusAccepted)
+
+		go h.checkOrderStatus(&order)
+
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+}
+
+func (h *Handler) checkOrderStatus(order *storage.Order) (err error) {
+
+	var r *http.Response
+	var body []byte
+	var dur int
+
+	ctx := context.Background()
+	url := h.cfg.BlackBox + fmt.Sprintf("%d", order.Number)
+
+	timer := time.NewTimer(time.Duration(dur))
+	for {
+		select {
+		case <-timer.C:
+			r, err = http.Get(url)
+
+			if err != nil {
+				log.Printf("%s", ErrBlackBox)
+				return ErrBlackBox
+			}
+
+			body, err = io.ReadAll(r.Body)
+			if err != nil {
+				log.Printf("%s", ErrBodyRead)
+				return ErrBodyRead
+			}
+
+			err = json.Unmarshal(body, &order)
+			if err != nil {
+				log.Printf("%s", ErrUnmarshal)
+				return ErrUnmarshal
+			}
+
+			switch r.StatusCode {
+			case http.StatusOK:
+				h.db.SetStatus(ctx, order)
+				return nil
+			case http.StatusTooManyRequests:
+				dur, err = strconv.Atoi(r.Header.Get("Retry-After"))
+				if err != nil {
+					log.Printf("%s", err)
+					return err
+				}
+
+				timer = time.NewTimer(time.Duration(dur))
+			default:
+				h.db.SetStatus(ctx, order)
+				return
+			}
+		}
+	}
 }
 
 func (h *Handler) Withdraw(w http.ResponseWriter, _ *http.Request) {

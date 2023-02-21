@@ -53,7 +53,7 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 
 	queries := []string{
 		"CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, user_login VARCHAR(100), passwd VARCHAR(100));",
-		"CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, user_login VARCHAR(100), order_number BIGINT);",
+		"CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, user_login VARCHAR(100), order_number BIGINT, status VARCHAR(10), accrual FLOAT);",
 	}
 
 	for _, query := range queries {
@@ -65,7 +65,21 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 
 	return nil
 }
+func (d *UserDB) SetStatus(ctx context.Context, order *storage.Order) error {
 
+	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
+	query := "INSERT INTO orders (status, accrual) VALUES($1, $2)"
+
+	_, err := d.db.ExecContext(childCtx, query, order.Status, order.Accrual)
+	if err != nil {
+		return ErrConnectToDB
+	}
+
+	return nil
+
+}
 func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (rows *sql.Row, err error) {
 
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
@@ -75,11 +89,6 @@ func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (rows
 
 	rows = d.db.QueryRowContext(childCtx, query, user.Login)
 
-	var name string
-	var id, value int
-
-	log.Println(rows.Scan(&id, &name, &value))
-	log.Println(id, name, value)
 	return rows, nil
 }
 
