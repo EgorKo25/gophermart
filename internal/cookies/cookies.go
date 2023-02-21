@@ -5,9 +5,7 @@ import (
 	"context"
 	"crypto/aes"
 	"crypto/cipher"
-	"crypto/hmac"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/base64"
 	"encoding/gob"
 	"errors"
@@ -62,61 +60,61 @@ func (c *CookieManager) Read(cookie *http.Cookie) (string, error) {
 	return string(value), nil
 }
 
-func (c *CookieManager) signMyDate(name, value string) string {
-
-	hm := hmac.New(sha256.New, c.Key)
-	hm.Write([]byte(name))
-	hm.Write([]byte(value))
-	signature := hm.Sum(nil)
-
-	value = string(signature) + value
-
-	return value
-}
-
 func (c *CookieManager) WriteEncrypt(cookie http.Cookie) (*http.Cookie, error) {
-
-	cookie.Value = c.signMyDate(cookie.Name, cookie.Value)
 
 	block, err := aes.NewCipher(c.Key)
 	if err != nil {
-		return nil, ErrCipher
+		return nil, err
 	}
 
+	// Wrap the cipher block in Galois Counter Mode.
 	aesGCM, err := cipher.NewGCM(block)
 	if err != nil {
-		return nil, ErrCipher
+		return nil, err
 	}
 
+	// Create a unique nonce containing 12 random bytes.
 	nonce := make([]byte, aesGCM.NonceSize())
 	_, err = io.ReadFull(rand.Reader, nonce)
 	if err != nil {
-		return nil, ErrCipher
+		return nil, err
 	}
 
+	// Prepare the plaintext input for encryption. Because we want to
+	// authenticate the cookie name as well as the value, we make this plaintext
+	// in the format "{cookie name}:{cookie value}". We use the : character as a
+	// separator because it is an invalid character for cookie names and
+	// therefore shouldn't appear in them.
 	plaintext := fmt.Sprintf("%s:%s", cookie.Name, cookie.Value)
 
+	// Encrypt the data using aesGCM.Seal(). By passing the nonce as the first
+	// parameter, the encrypted data will be appended to the nonce — meaning
+	// that the returned encryptedValue variable will be in the format
+	// "{nonce}{encrypted plaintext data}".
 	encryptedValue := aesGCM.Seal(nonce, nonce, []byte(plaintext), nil)
 
+	// Set the cookie value to the encryptedValue.
 	cookie.Value = string(encryptedValue)
 
+	// Write the cookie as normal.
 	return c.Write(cookie)
 }
 
 func (c *CookieManager) ReadEncrypt(cookie *http.Cookie, name string, secretKey []byte) (string, error) {
 	encryptedValue, err := c.Read(cookie)
+	log.Println(encryptedValue)
 	if err != nil {
-		return "", ErrInvalidValue
+		return "", err
 	}
 
 	block, err := aes.NewCipher(secretKey)
 	if err != nil {
-		return "", ErrCipher
+		return "", err
 	}
 
 	aesGCM, err := cipher.NewGCM(block)
 	if err != nil {
-		return "", ErrCipher
+		return "", err
 	}
 
 	nonceSize := aesGCM.NonceSize()
@@ -138,26 +136,12 @@ func (c *CookieManager) ReadEncrypt(cookie *http.Cookie, name string, secretKey 
 		return "", ErrInvalidValue
 	}
 
-	if len(value) < sha256.Size {
-		return "", ErrInvalidValue
-	}
-
-	signature := value[:sha256.Size]
-	value = value[sha256.Size:]
-
-	mac := hmac.New(sha256.New, secretKey)
-	mac.Write([]byte(cookie.Name))
-	mac.Write([]byte(value))
-	expectedSignature := mac.Sum(nil)
-
-	if !hmac.Equal([]byte(signature), expectedSignature) {
-		return "", ErrInvalidValue
-	}
-
 	if expectedName != name {
 		return "", ErrInvalidValue
 	}
 
+	log.Println(value)
+	// Return the plaintext cookie value.
 	return value, nil
 }
 func (c *CookieManager) GetCookie(user *storage.User) (final *http.Cookie, err error) {
@@ -204,6 +188,7 @@ func (c *CookieManager) CheckCookie(user *storage.User, cookieAll []*http.Cookie
 			case ErrInvalidValue:
 				err = ErrInvalidValue
 			case nil:
+				log.Println("im here", value)
 				return value, nil
 			}
 		}

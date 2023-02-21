@@ -66,53 +66,21 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-func (d *UserDB) GetAllUserOrders(ctx context.Context) ([]string, error) {
-
-	var rows *sql.Rows
+func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (rows *sql.Row, err error) {
 
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	//query := "SELECT * FROM orders WHERE user_login = $1"
+	query := "SELECT * FROM orders WHERE user_login = $1"
 
-	query := "SELECT * FROM orders"
+	rows = d.db.QueryRowContext(childCtx, query, user.Login)
 
-	rows, err := d.db.QueryContext(childCtx, query)
-	if err != nil {
-		return nil, ErrConnectToDB
-	}
-	//TODO:ДОДЕЛВАЙ
-	cols, err := rows.Columns()
-	if err != nil {
-		fmt.Println("Failed to get columns", err)
-	}
+	var name string
+	var id, value int
 
-	// Result is your slice string.
-	rawResult := make([][]byte, len(cols))
-	result := make([]string, len(cols))
-
-	dest := make([]interface{}, len(cols)) // A temporary interface{} slice
-	for i, _ := range rawResult {
-		dest[i] = &rawResult[i] // Put pointers to each string in the interface slice
-	}
-
-	for rows.Next() {
-		err = rows.Scan(dest...)
-		if err != nil {
-			fmt.Println("Failed to scan row", err)
-		}
-
-		for i, raw := range rawResult {
-			if raw == nil {
-				result[i] = "\\N"
-			} else {
-				result[i] = string(raw)
-			}
-		}
-
-		fmt.Printf("%#v\n", result)
-	}
-	return result, nil
+	log.Println(rows.Scan(&id, &name, &value))
+	log.Println(id, name, value)
+	return rows, nil
 }
 
 func (d *UserDB) InsertOrderWithContext(ctx context.Context, order *storage.Order) error {

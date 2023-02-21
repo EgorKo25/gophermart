@@ -198,7 +198,8 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order.User, err = h.cookies.CheckCookie(nil, r.Cookies())
+	cookie := r.Cookies()
+	order.User, err = h.cookies.CheckCookie(nil, cookie)
 
 	switch {
 	case err == cookies.ErrNoCookie:
@@ -227,8 +228,10 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		return
 	case database.ErrRowAlreadyExists:
 		w.WriteHeader(http.StatusOK)
-	default:
+	case nil:
 		err = h.db.InsertOrderWithContext(ctx, &order)
+		w.WriteHeader(http.StatusAccepted)
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
@@ -242,29 +245,23 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
 	var err error
-	var ordersList []string
+	var user storage.User
 
-	//cookie := r.Cookies()
-	/*
-		user.Login, err = h.cookies.CheckCookie(nil, cookie)
-		switch err {
-		case cookies.ErrNoCookie:
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		case cookies.ErrCipher:
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		case cookies.ErrInvalidValue:
-			w.WriteHeader(http.StatusBadRequest)
-			return
-		}
-	*/
-	ordersList, err = h.db.GetAllUserOrders(ctx)
-	if err != nil {
+	cookie := r.Cookies()
+
+	user.Login, err = h.cookies.CheckCookie(nil, cookie)
+	switch err {
+	case cookies.ErrNoCookie:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	case cookies.ErrCipher:
 		w.WriteHeader(http.StatusInternalServerError)
+		return
+	case cookies.ErrInvalidValue:
+		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	log.Println(ordersList)
-	w.WriteHeader(http.StatusOK)
+	ordersList, err := h.db.GetAllUserOrders(ctx, &user)
+	log.Println(*ordersList)
 }
