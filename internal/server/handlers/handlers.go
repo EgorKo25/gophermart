@@ -198,9 +198,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie := r.Cookies()
-	log.Println(cookie)
-	order.User, err = h.cookies.CheckCookie(nil, cookie)
+	order.User, err = h.cookies.CheckCookie(nil, r.Cookies())
 
 	switch {
 	case err == cookies.ErrNoCookie:
