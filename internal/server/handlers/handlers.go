@@ -218,7 +218,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		err = h.db.InsertOrderWithContext(ctx, &order)
 		w.WriteHeader(http.StatusAccepted)
 
-		go h.checkOrderStatus(&order)
+		h.checkOrderStatus(&order)
 
 		return
 	}
