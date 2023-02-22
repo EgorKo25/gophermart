@@ -7,7 +7,7 @@ type User struct {
 
 type Order struct {
 	User    string  `json:"omitempty"`
-	Number  int     `json:"order,omitempty"`
+	Number  string  `json:"order,omitempty"`
 	Status  string  `json:"status,omitempty"`
 	Accrual float64 `json:"accrual,omitempty"`
 }

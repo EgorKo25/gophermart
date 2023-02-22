@@ -194,20 +194,15 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	order.Number, err = strconv.Atoi(fmt.Sprintf("%s", body))
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
+	order.Number = fmt.Sprintf("%s", body)
 
-	if isValid := luhn.Valid(order.Number); isValid == false {
+	tmp, _ := strconv.Atoi(order.Number)
+	if isValid := luhn.Valid(tmp); isValid == false {
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
-	log.Println(order)
 	order.Status = "NEW"
-	order.Accrual = 0.0
 
 	err = h.db.CheckOrderWithContext(ctx, &order)
 	switch err {
@@ -233,7 +228,7 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 	dur := 0
 
 	ctx := context.Background()
-	url, _ := url2.JoinPath(h.cfg.BlackBox, "api", "orders", strconv.Itoa(order.Number))
+	url, _ := url2.JoinPath(h.cfg.BlackBox, "api", "orders", order.Number)
 
 	timer := time.NewTimer(time.Duration(dur))
 	for {
