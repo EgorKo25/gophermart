@@ -94,8 +94,8 @@ func (d *UserDB) GetAllUserOrders(ctx context.Context, ord *storage.Order) (orde
 	defer rows.Close()
 
 	for rows.Next() {
-		if err = rows.Scan(ord.User, ord.Number, ord.Status,
-			ord.Accrual, ord.Uploaded_at,
+		if err = rows.Scan(&ord.User, &ord.Number, &ord.Status,
+			&ord.Accrual, &ord.Uploaded_at,
 		); err != nil {
 			return orders, err
 		}

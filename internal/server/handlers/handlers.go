@@ -317,7 +317,7 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 	default:
 		log.Println(err)
 		log.Println(ordersList)
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
