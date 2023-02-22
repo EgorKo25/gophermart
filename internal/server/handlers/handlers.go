@@ -255,6 +255,7 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 				return ErrBodyRead
 			}
 
+			log.Println(body)
 			err = json.Unmarshal(body, order)
 			if err != nil {
 				log.Printf("%s\n%s\n hhhh^%s", ErrUnmarshal, err, body)
@@ -272,9 +273,6 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 				}
 
 				timer = time.NewTimer(time.Duration(dur))
-			default:
-				h.db.SetStatus(ctx, order)
-				return nil
 			}
 		}
 	}
