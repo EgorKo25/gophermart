@@ -216,6 +216,9 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	case nil:
 		err = h.db.InsertOrderWithContext(ctx, &order)
+		if err != nil {
+			log.Println(err)
+		}
 		w.WriteHeader(http.StatusAccepted)
 
 		err = h.checkOrderStatus(&order)
