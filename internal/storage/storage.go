@@ -6,10 +6,10 @@ type User struct {
 }
 
 type Order struct {
-	User    string
-	Number  int     `json:"order"`
-	Status  string  `json:"status"`
-	Accrual float64 `json:"accrual"`
+	User    string  `json:"omitempty"`
+	Number  int     `json:"order,omitempty"`
+	Status  string  `json:"status,omitempty"`
+	Accrual float64 `json:"accrual,omitempty"`
 }
 
 func NewUser(login string, passwd string) *User {
