@@ -255,9 +255,9 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 				return ErrBodyRead
 			}
 
-			err = json.Unmarshal(body, &order)
+			err = json.Unmarshal(body, order)
 			if err != nil {
-				log.Printf("%s\n%s\n%s", ErrUnmarshal, err, body)
+				log.Printf("%s\n%s\n hhhh^%s", ErrUnmarshal, err, body)
 			}
 
 			switch r.StatusCode {
