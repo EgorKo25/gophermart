@@ -263,7 +263,7 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 
 			switch r.StatusCode {
 			case http.StatusOK:
-				h.db.SetStatus(ctx, order)
+				go h.db.SetStatus(ctx, order)
 				return nil
 			case http.StatusTooManyRequests:
 				dur, err = strconv.Atoi(r.Header.Get("Retry-After"))
