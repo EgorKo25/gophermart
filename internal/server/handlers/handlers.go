@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"gophermart/internal/config"
-	"gophermart/internal/cookies"
-	"gophermart/internal/database"
-	"gophermart/internal/storage"
 	"io"
 	"log"
 	"net/http"
 	url2 "net/url"
 	"strconv"
 	"time"
+
+	"gophermart/internal/config"
+	"gophermart/internal/cookies"
+	"gophermart/internal/database"
+	"gophermart/internal/storage"
 
 	"github.com/theplant/luhn"
 )
@@ -203,6 +204,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	order.Status = "NEW"
+	order.Uploaded_at = time.Now().Format(time.RFC3339)
 
 	err = h.db.CheckOrderWithContext(ctx, &order)
 	switch err {
@@ -281,23 +283,42 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
 	var err error
-	var user storage.User
+	var order storage.Order
+	/*
+		cookie := r.Cookies()
 
-	cookie := r.Cookies()
 
-	user.Login, err = h.cookies.CheckCookie(nil, cookie)
+			user.Login, err = h.cookies.CheckCookie(nil, cookie)
+			switch err {
+			case cookies.ErrNoCookie:
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+			case cookies.ErrCipher:
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			case cookies.ErrInvalidValue:
+				w.WriteHeader(http.StatusBadRequest)
+				return
+			}
+	*/
+	ordersList, err := h.db.GetAllUserOrders(ctx, &order)
 	switch err {
-	case cookies.ErrNoCookie:
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	case cookies.ErrCipher:
+	case database.ErrConnectToDB:
 		w.WriteHeader(http.StatusInternalServerError)
 		return
-	case cookies.ErrInvalidValue:
+	case nil:
+		log.Println(ordersList)
+
+		body, _ := json.Marshal(ordersList)
+		w.Write(body)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		return
+	default:
+		log.Println(err)
+		log.Println(ordersList)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 
-	ordersList, err := h.db.GetAllUserOrders(ctx, &user)
-	log.Println(*ordersList)
 }

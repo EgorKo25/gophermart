@@ -53,7 +53,7 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 
 	queries := []string{
 		"CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, user_login VARCHAR(100), passwd VARCHAR(100));",
-		"CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, user_login VARCHAR(100), order_number BIGINT, status VARCHAR(10), accrual FLOAT);",
+		"CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, user_login VARCHAR(100), order_number BIGINT, status VARCHAR(10), accrual FLOAT, uploaded_at VARCHAR(50));",
 	}
 
 	for _, query := range queries {
@@ -80,16 +80,31 @@ func (d *UserDB) SetStatus(ctx context.Context, order *storage.Order) error {
 	return nil
 
 }
-func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (rows *sql.Row, err error) {
+func (d *UserDB) GetAllUserOrders(ctx context.Context, ord *storage.Order) (orders []storage.Order, err error) {
 
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	query := "SELECT * FROM orders WHERE user_login = $1"
+	query := "SELECT * FROM orders"
 
-	rows = d.db.QueryRowContext(childCtx, query, user.Login)
+	rows, err := d.db.QueryContext(childCtx, query)
+	if err != nil {
+		return orders, ErrConnectToDB
+	}
+	defer rows.Close()
 
-	return rows, nil
+	for rows.Next() {
+		if err = rows.Scan(ord.User, ord.Number, ord.Status,
+			ord.Accrual, ord.Uploaded_at,
+		); err != nil {
+			return orders, err
+		}
+		orders = append(orders, *ord)
+	}
+	if err = rows.Err(); err != nil {
+		return orders, err
+	}
+	return orders, nil
 }
 
 func (d *UserDB) InsertOrderWithContext(ctx context.Context, order *storage.Order) error {
