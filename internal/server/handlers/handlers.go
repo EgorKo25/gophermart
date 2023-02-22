@@ -258,7 +258,6 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 			err = json.Unmarshal(body, &order)
 			if err != nil {
 				log.Printf("%s\n%s\n%s", ErrUnmarshal, err, body)
-				return ErrUnmarshal
 			}
 
 			switch r.StatusCode {
