@@ -239,6 +239,7 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 	for {
 		select {
 		case <-timer.C:
+			log.Println(url)
 			r, err := http.Get(url)
 
 			if err != nil {
