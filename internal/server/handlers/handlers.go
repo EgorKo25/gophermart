@@ -233,7 +233,8 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 	dur := 0
 
 	ctx := context.Background()
-	url, _ := url2.JoinPath(h.cfg.BlackBox, strconv.Itoa(order.Number), "")
+	url, _ := url2.JoinPath(h.cfg.BlackBox, strconv.Itoa(order.Number))
+	url += "/"
 
 	timer := time.NewTimer(time.Duration(dur))
 	for {
