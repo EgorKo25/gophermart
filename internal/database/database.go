@@ -84,14 +84,18 @@ func (d *UserDB) SetStatus(ctx context.Context, order *storage.Order) error {
 	return nil
 
 }
-func (d *UserDB) GetAllUserOrders(ctx context.Context, ord *storage.Order) (orders []storage.Order, err error) {
+func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (orders []storage.Order, err error) {
+
+	var ord storage.Order
 
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	query := "SELECT * FROM orders"
+	query := "SELECT * FROM orders WHERE user_login = $1"
 
-	rows, err := d.db.QueryContext(childCtx, query)
+	rows, err := d.db.QueryContext(childCtx, query,
+		user.Login,
+	)
 	if err != nil {
 		return orders, ErrConnectToDB
 	}
@@ -103,7 +107,8 @@ func (d *UserDB) GetAllUserOrders(ctx context.Context, ord *storage.Order) (orde
 		); err != nil {
 			return orders, err
 		}
-		orders = append(orders, *ord)
+
+		orders = append(orders, ord)
 	}
 	if err = rows.Err(); err != nil {
 		return orders, err

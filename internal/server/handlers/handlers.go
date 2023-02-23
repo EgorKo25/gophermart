@@ -254,9 +254,6 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order.Status = "NEW"
-	order.Uploaded_at = time.Now().Format(time.RFC3339)
-
 	err = h.db.CheckOrderWithContext(ctx, &order)
 
 	switch err {
@@ -346,23 +343,23 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	var order storage.Order
-	/*
-		cookie := r.Cookies()
+	var user storage.User
 
+	cookie := r.Cookies()
 
-			user.Login, err = h.cookies.CheckCookie(nil, cookie)
-			switch err {
-			case cookies.ErrNoCookie:
-				w.WriteHeader(http.StatusUnauthorized)
-				return
-			case cookies.ErrCipher:
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			case cookies.ErrInvalidValue:
-				w.WriteHeader(http.StatusBadRequest)
-				return
-			}
-	*/
+	user.Login, err = h.cookies.CheckCookie(nil, cookie)
+	switch err {
+	case cookies.ErrNoCookie:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	case cookies.ErrCipher:
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	case cookies.ErrInvalidValue:
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
 	ordersList, err := h.db.GetAllUserOrders(ctx, &order)
 	switch err {
 	case database.ErrConnectToDB:
