@@ -368,8 +368,8 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 		log.Println(ordersList)
 
 		body, _ := json.Marshal(ordersList)
-		w.Write(body)
 		w.Header().Set("Content-Type", "application/json")
+		w.Write(body)
 		w.WriteHeader(http.StatusOK)
 		return
 	default:

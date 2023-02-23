@@ -184,7 +184,6 @@ func (c *CookieManager) CheckCookie(user *storage.User, cookieAll []*http.Cookie
 				case ErrInvalidValue:
 					err = ErrInvalidValue
 				case nil:
-					log.Println("im here", value)
 					return value, nil
 				}
 			}
