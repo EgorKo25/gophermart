@@ -269,8 +269,6 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 			log.Printf("%s", err)
 		}
 
-		w.WriteHeader(http.StatusAccepted)
-
 		go func() {
 			err = h.checkOrderStatus(&order)
 			if err != nil {
@@ -278,6 +276,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 			}
 		}()
 
+		w.WriteHeader(http.StatusAccepted)
 		return
 	}
 }
