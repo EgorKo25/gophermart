@@ -342,7 +342,6 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
 	var err error
-	var order storage.Order
 	var user storage.User
 
 	cookie := r.Cookies()
@@ -360,7 +359,7 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ordersList, err := h.db.GetAllUserOrders(ctx, &order)
+	ordersList, err := h.db.GetAllUserOrders(ctx, &user)
 	switch err {
 	case database.ErrConnectToDB:
 		w.WriteHeader(http.StatusInternalServerError)
