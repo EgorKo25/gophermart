@@ -140,8 +140,6 @@ func (c *CookieManager) ReadEncrypt(cookie *http.Cookie, name string, secretKey 
 		return "", ErrInvalidValue
 	}
 
-	log.Println(value)
-	// Return the plaintext cookie value.
 	return value, nil
 }
 func (c *CookieManager) GetCookie(user *storage.User) (final *http.Cookie, err error) {

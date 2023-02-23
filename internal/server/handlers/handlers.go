@@ -344,6 +344,7 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	var user storage.User
+	var orderList []storage.Order
 
 	cookie := r.Cookies()
 
@@ -360,22 +361,22 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ordersList, err := h.db.GetAllUserOrders(ctx, &user)
+	orderList, err = h.db.GetAllUserOrders(ctx, &user)
 	switch err {
 	case database.ErrConnectToDB:
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	case nil:
-		log.Println(ordersList)
+		log.Println(orderList)
 
-		body, _ := json.Marshal(ordersList)
+		body, _ := json.Marshal(orderList)
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(body)
 		w.WriteHeader(http.StatusOK)
 		return
 	default:
 		log.Println(err)
-		log.Println(ordersList)
+		log.Println(orderList)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
