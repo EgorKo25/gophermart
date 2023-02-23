@@ -176,6 +176,7 @@ func (c *CookieManager) CheckCookie(user *storage.User, cookieAll []*http.Cookie
 		for _, cookie := range cookieAll {
 			if cookie != nil {
 				value, err := c.ReadEncrypt(cookie, cookie.Name, c.Key)
+				log.Println(value)
 				switch err {
 				case ErrCipher:
 					err = ErrCipher
