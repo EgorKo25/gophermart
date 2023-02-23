@@ -342,6 +342,7 @@ func (h *Handler) Withdraw(w http.ResponseWriter, _ *http.Request) {
 func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
+	var resp []byte
 	var err error
 	var user storage.User
 	var orderList []storage.Order
@@ -369,9 +370,15 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 	case nil:
 		log.Println(orderList)
 
-		body, _ := json.Marshal(orderList)
+		resp, err = json.Marshal(orderList)
+		if err != nil {
+			log.Printf("%s: %s", ErrUnmarshal, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(body)
+		w.Write(resp)
 		w.WriteHeader(http.StatusOK)
 		return
 	default:
