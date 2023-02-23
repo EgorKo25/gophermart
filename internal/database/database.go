@@ -70,9 +70,13 @@ func (d *UserDB) SetStatus(ctx context.Context, order *storage.Order) error {
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	query := "INSERT INTO orders (status, accrual) VALUES($1, $2)"
+	query := "UPDATE orders SET status = $1, accrual = $2 WHERE order_number = $3"
 
-	_, err := d.db.ExecContext(childCtx, query, order.Status, order.Accrual)
+	_, err := d.db.ExecContext(childCtx, query,
+		order.Status,
+		order.Accrual,
+		order.Number,
+	)
 	if err != nil {
 		return ErrConnectToDB
 	}
@@ -151,39 +155,17 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 
 }
 
-/*
-	func (d *UserDB) CheckOrderWithContext(ctx context.Context, ) error {
-		childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
-		defer cancel()
-
-		query := "SELECT EXISTS(SELECT * FROM orders WHERE user_login = $1 AND order_number = $2);"
-
-		r, err := d.db.ExecContext(childCtx, query, order.User, order.Number)
-		if err != nil {
-			log.Println(r, err)
-			return ErrConnectToDB
-		}
-
-		result, _ := r.RowsAffected()
-		if result != 0 {
-			return ErrRowAlreadyExists
-		}
-
-		return nil
-
-}
-*/
 func (d *UserDB) InsertUserWithContext(ctx context.Context, user *storage.User) error {
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
 	if d.db == nil {
-		return errors.New("отсутствует открытая база данных")
+		return ErrConnectToDB
 	}
 
-	r, err := d.db.ExecContext(childCtx, "INSERT INTO users (user_login, passwd) VALUES($1, $2);", user.Login, user.Passwd)
+	_, err := d.db.ExecContext(childCtx, "INSERT INTO users (user_login, passwd) VALUES($1, $2);", user.Login, user.Passwd)
 	if err != nil {
-		return errors.New(fmt.Sprintf("не удалось отправить данные в базу данных.\n Ошибка: %s\nОтвет базы данных: %s", err, r))
+		return ErrConnectToDB
 	}
 
 	return nil
@@ -209,10 +191,10 @@ func (d *UserDB) CheckUserWithContext(ctx context.Context, user *storage.User) e
 	r.Next()
 	r.Scan(&result)
 
-	if result == false {
-		return ErrRowDoesntExists
+	if result {
+		return nil
 	}
 
-	return nil
+	return ErrRowDoesntExists
 
 }

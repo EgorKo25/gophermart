@@ -111,6 +111,8 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 	var user storage.User
 	var cookie *http.Cookie
 
+	ctx := context.Background()
+
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		log.Printf("Ошибка чтения тела запроса: \n%e", err)
@@ -131,6 +133,26 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Printf("Ошибка перевода из формата json: \n%e", err)
 			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		err = h.db.CheckUserWithContext(ctx, &user)
+		switch err {
+		case database.ErrConnectToDB:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		case database.ErrRowDoesntExists:
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		case nil:
+			cookie, err = h.cookies.GetCookie(&user)
+			if err != nil {
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			http.SetCookie(w, cookie)
+			w.WriteHeader(http.StatusOK)
 			return
 		}
 
@@ -181,11 +203,36 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 
+	var user storage.User
 	var order storage.Order
 	var body []byte
 	var err error
 
 	ctx := context.Background()
+
+	cookieA := r.Cookies()
+	_, err = h.cookies.CheckCookie(&user, cookieA)
+
+	switch {
+	case err == database.ErrConnectToDB:
+		log.Printf("Ошибка: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	case err == database.ErrRowDoesntExists:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	case err == cookies.ErrNoCookie:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	case err == cookies.ErrInvalidValue:
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	case err != nil:
+		log.Printf("Ошибка: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	default:
+	}
 
 	body, err = io.ReadAll(r.Body)
 	defer func() {
