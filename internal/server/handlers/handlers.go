@@ -54,20 +54,22 @@ func (h *Handler) Balance(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
+
 	var user storage.User
 	var cookie *http.Cookie
+
 	ctx := context.Background()
 
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
-		log.Printf("Ошибка чтения тела запроса: \n%e", err)
+		log.Printf("%s", ErrBodyRead)
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	}
 	defer func() {
 		err = r.Body.Close()
 		if err != nil {
-			log.Printf("Не удалось закрыть тело запроса: \n%e", err)
+			log.Printf("%s", ErrBodyClose)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -82,12 +84,13 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 
 	err = h.db.InsertUserWithContext(ctx, &user)
 	if err != nil {
-		log.Printf("Ошибка при обращении в бд: \n%e", err)
+		log.Printf("%s", database.ErrConnectToDB)
 		w.WriteHeader(http.StatusConflict)
 		return
 	}
 
 	cookie, err = h.cookies.GetCookie(&user)
+	log.Println(cookie)
 	switch err {
 	case cookies.ErrValueTooLong:
 		w.WriteHeader(http.StatusBadRequest)
