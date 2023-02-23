@@ -187,30 +187,6 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 
 	ctx := context.Background()
 
-	cookieA := r.Cookies()
-	_, err = h.cookies.CheckCookie(nil, cookieA)
-
-	switch {
-	case err == database.ErrConnectToDB:
-		log.Printf("Ошибка: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	case err == database.ErrRowDoesntExists:
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	case err == cookies.ErrNoCookie:
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	case err == cookies.ErrInvalidValue:
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	case err != nil:
-		log.Printf("Ошибка: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	default:
-	}
-
 	body, err = io.ReadAll(r.Body)
 	defer func() {
 		err = r.Body.Close()
@@ -248,10 +224,12 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusAccepted)
 
-		err = h.checkOrderStatus(&order)
-		if err != nil {
-			log.Println(err)
-		}
+		go func() {
+			err = h.checkOrderStatus(&order)
+			if err != nil {
+				log.Println(err)
+			}
+		}()
 
 		return
 	}
@@ -260,18 +238,18 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) checkOrderStatus(order *storage.Order) error {
 
 	var body []byte
+
 	dur := 0
 
 	ctx := context.Background()
 	url, _ := url2.JoinPath(h.cfg.BlackBox, "api", "orders", order.Number)
-
 	timer := time.NewTimer(time.Duration(dur))
+
 	for {
 		select {
 		case <-timer.C:
-			log.Println(url)
-			r, err := http.Get(url)
 
+			r, err := http.Get(url)
 			if err != nil {
 				return ErrBlackBox
 			}
@@ -285,7 +263,7 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 			log.Println(body)
 			err = json.Unmarshal(body, order)
 			if err != nil {
-				log.Printf("%s\n%s\n hhhh^%s", ErrUnmarshal, err, body)
+				return ErrUnmarshal
 			}
 
 			switch r.StatusCode {

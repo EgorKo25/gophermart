@@ -123,12 +123,15 @@ func (d *UserDB) InsertOrderWithContext(ctx context.Context, order *storage.Orde
 }
 
 func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order) error {
+
+	var result bool
+
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
 	query := "SELECT EXISTS(SELECT * FROM orders WHERE user_login = $1 AND order_number = $2)"
 
-	r, err := d.db.ExecContext(childCtx, query,
+	r, err := d.db.QueryContext(childCtx, query,
 		order.User,
 		order.Number,
 	)
@@ -137,9 +140,11 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 		return ErrConnectToDB
 	}
 
-	result, _ := r.RowsAffected()
-	if result == 0 {
-		return ErrRowDoesntExists
+	r.Next()
+	r.Scan(&result)
+
+	if result {
+		return ErrRowAlreadyExists
 	}
 
 	return nil
