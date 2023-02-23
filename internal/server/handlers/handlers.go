@@ -266,7 +266,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	case nil:
 		err = h.db.InsertOrderWithContext(ctx, &order)
 		if err != nil {
-			log.Println(err)
+			log.Printf("%s", err)
 		}
 
 		w.WriteHeader(http.StatusAccepted)
@@ -274,7 +274,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		go func() {
 			err = h.checkOrderStatus(&order)
 			if err != nil {
-				log.Println(err)
+				log.Printf("%s", err)
 			}
 		}()
 
@@ -307,11 +307,12 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 				return ErrBodyRead
 			}
 
-			log.Println(body)
 			err = json.Unmarshal(body, order)
 			if err != nil {
 				return ErrUnmarshal
 			}
+
+			log.Println(order)
 
 			switch r.StatusCode {
 			case http.StatusNoContent:
