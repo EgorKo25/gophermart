@@ -263,21 +263,20 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		return
 	case database.ErrRowAlreadyExists:
 		w.WriteHeader(http.StatusOK)
+		return
 	case nil:
 		err = h.db.InsertOrderWithContext(ctx, &order)
 		if err != nil {
 			log.Printf("%s", err)
 		}
 
-		h.checkOrderStatus(&order)
-		/*
-			go func() {
-				err = h.checkOrderStatus(&order)
-				if err != nil {
-					log.Printf("%s", err)
-				}
-			}()
-		*/
+		go func() {
+			err = h.checkOrderStatus(&order)
+			if err != nil {
+				log.Printf("%s", err)
+			}
+		}()
+
 		w.WriteHeader(http.StatusAccepted)
 		return
 	}
