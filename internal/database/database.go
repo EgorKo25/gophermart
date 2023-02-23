@@ -185,12 +185,15 @@ func (d *UserDB) InsertUserWithContext(ctx context.Context, user *storage.User) 
 }
 
 func (d *UserDB) CheckUserWithContext(ctx context.Context, user *storage.User) error {
+
+	var result bool
+
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
 	query := "SELECT EXISTS(SELECT * FROM users WHERE user_login = $1 AND passwd = $2)"
 
-	r, err := d.db.ExecContext(childCtx, query,
+	r, err := d.db.QueryContext(childCtx, query,
 		user.Login,
 		user.Passwd,
 	)
@@ -198,8 +201,10 @@ func (d *UserDB) CheckUserWithContext(ctx context.Context, user *storage.User) e
 		return ErrConnectToDB
 	}
 
-	result, _ := r.RowsAffected()
-	if result == 0 {
+	r.Next()
+	r.Scan(&result)
+
+	if result == false {
 		return ErrRowDoesntExists
 	}
 

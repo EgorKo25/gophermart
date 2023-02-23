@@ -175,21 +175,19 @@ func (c *CookieManager) CheckCookie(user *storage.User, cookieAll []*http.Cookie
 
 	ctx := context.Background()
 
-	log.Println(user)
-	log.Println(cookieAll)
-	log.Println()
-
-	for _, cookie := range cookieAll {
-		if cookie != nil {
-			value, err := c.ReadEncrypt(cookie, cookie.Name, c.Key)
-			switch err {
-			case ErrCipher:
-				err = ErrCipher
-			case ErrInvalidValue:
-				err = ErrInvalidValue
-			case nil:
-				log.Println("im here", value)
-				return value, nil
+	if len(cookieAll) > 0 {
+		for _, cookie := range cookieAll {
+			if cookie != nil {
+				value, err := c.ReadEncrypt(cookie, cookie.Name, c.Key)
+				switch err {
+				case ErrCipher:
+					err = ErrCipher
+				case ErrInvalidValue:
+					err = ErrInvalidValue
+				case nil:
+					log.Println("im here", value)
+					return value, nil
+				}
 			}
 		}
 	}
@@ -204,9 +202,7 @@ func (c *CookieManager) CheckCookie(user *storage.User, cookieAll []*http.Cookie
 		case nil:
 			return "", nil
 		}
-
 	}
 
 	return "", ErrNoCookie
-
 }

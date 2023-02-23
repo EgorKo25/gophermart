@@ -133,6 +133,7 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
 	}
 
 	cookieA := r.Cookies()
@@ -207,6 +208,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	order.Uploaded_at = time.Now().Format(time.RFC3339)
 
 	err = h.db.CheckOrderWithContext(ctx, &order)
+
 	switch err {
 	case database.ErrConnectToDB:
 		log.Printf("Ошибка: %s", err)
@@ -219,6 +221,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Println(err)
 		}
+
 		w.WriteHeader(http.StatusAccepted)
 
 		err = h.checkOrderStatus(&order)
