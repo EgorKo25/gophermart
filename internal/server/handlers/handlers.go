@@ -362,7 +362,7 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println(user)
+	log.Println("ПОЛЬЗОВАТЕЛЬ ", user)
 	orderList, err = h.db.GetAllUserOrders(ctx, &user)
 	switch err {
 	case database.ErrConnectToDB:
