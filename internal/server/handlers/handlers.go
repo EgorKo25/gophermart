@@ -372,6 +372,8 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 		log.Println(orderList)
 
 		if len(orderList) == 0 {
+
+			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
