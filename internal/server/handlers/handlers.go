@@ -370,6 +370,11 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 	case nil:
 		log.Println(orderList)
 
+		if len(orderList) == 0 {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
 		resp, err = json.Marshal(orderList)
 		if err != nil {
 			log.Printf("%s: %s", ErrUnmarshal, err)
