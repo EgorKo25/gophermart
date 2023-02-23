@@ -187,6 +187,30 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 
 	ctx := context.Background()
 
+	cookieA := r.Cookies()
+	_, err = h.cookies.CheckCookie(nil, cookieA)
+
+	switch {
+	case err == database.ErrConnectToDB:
+		log.Printf("Ошибка: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	case err == database.ErrRowDoesntExists:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	case err == cookies.ErrNoCookie:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	case err == cookies.ErrInvalidValue:
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	case err != nil:
+		log.Printf("Ошибка: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	default:
+	}
+
 	body, err = io.ReadAll(r.Body)
 	defer func() {
 		err = r.Body.Close()
