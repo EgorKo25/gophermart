@@ -151,9 +151,8 @@ func (c *CookieManager) GetCookie(user *storage.User) (final *http.Cookie, err e
 		Name:  fmt.Sprintf("CookieUser%s", user.Login),
 		Value: user.Login,
 
-		Path:     "/",
-		Secure:   true,
-		HttpOnly: true,
+		Secure:   false,
+		HttpOnly: false,
 	}
 
 	err = gob.NewEncoder(&buffer).Encode(cookie)
