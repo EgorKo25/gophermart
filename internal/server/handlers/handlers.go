@@ -269,13 +269,15 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 			log.Printf("%s", err)
 		}
 
-		go func() {
-			err = h.checkOrderStatus(&order)
-			if err != nil {
-				log.Printf("%s", err)
-			}
-		}()
-
+		h.checkOrderStatus(&order)
+		/*
+			go func() {
+				err = h.checkOrderStatus(&order)
+				if err != nil {
+					log.Printf("%s", err)
+				}
+			}()
+		*/
 		w.WriteHeader(http.StatusAccepted)
 		return
 	}
