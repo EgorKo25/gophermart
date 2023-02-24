@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/theplant/luhn"
 	"gophermart/internal/config"
 	"gophermart/internal/cookies"
 	"gophermart/internal/database"
@@ -14,8 +15,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
-	"github.com/theplant/luhn"
 )
 
 var (
@@ -245,6 +244,8 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	order.Number = fmt.Sprintf("%s", body)
+	order.Status = "NEW"
+	order.Uploaded_at = time.Now().Format(time.RFC3339)
 
 	tmp, _ := strconv.Atoi(order.Number)
 	if isValid := luhn.Valid(tmp); isValid == false {
@@ -264,9 +265,6 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		return
 	default:
 	}
-
-	order.Status = "NEW"
-	order.Uploaded_at = time.Now().Format(time.RFC3339)
 
 	err = h.db.InsertOrderWithContext(ctx, &order)
 	if err != nil {

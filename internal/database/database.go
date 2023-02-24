@@ -150,9 +150,15 @@ func (d *UserDB) InsertOrderWithContext(ctx context.Context, order *storage.Orde
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	query := "INSERT INTO orders (user_login, order_number) VALUES($1, $2);"
+	query := "INSERT INTO orders (user_login, order_number, status, accrual, uploaded_at) VALUES($1, $2, $3, $4, $5);"
 
-	_, err := d.db.ExecContext(childCtx, query, order.User, order.Number)
+	_, err := d.db.ExecContext(childCtx, query,
+		order.User,
+		order.Number,
+		order.Status,
+		order.Accrual,
+		order.Uploaded_at,
+	)
 	if err != nil {
 		return ErrConnectToDB
 	}
