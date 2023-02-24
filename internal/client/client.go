@@ -6,7 +6,6 @@ import (
 	"errors"
 	"gophermart/internal/database"
 	"io"
-	"log"
 	"net/http"
 	url2 "net/url"
 	"strconv"
@@ -39,10 +38,7 @@ func (c *Client) OrdersUpdater() {
 
 	ctx := context.Background()
 
-	orders, err := c.db.GetAllOrders(ctx)
-	if err != nil {
-		log.Fatalf("%s", err)
-	}
+	orders, _ := c.db.GetAllOrders(ctx)
 
 	for _, order := range orders {
 		switch order.Status {
