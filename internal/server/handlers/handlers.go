@@ -212,7 +212,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	ctx := context.Background()
 
 	cookieA := r.Cookies()
-	_, err = h.cookies.CheckCookie(&user, cookieA)
+	order.User, err = h.cookies.CheckCookie(&user, cookieA)
 
 	switch {
 	case err == database.ErrConnectToDB:
