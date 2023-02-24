@@ -49,8 +49,8 @@ func (c *Client) OrdersUpdater() error {
 		case "PROCESSING":
 		case "NEW":
 			c.checkOrderStatus(&order)
-		default:
 			c.db.UserUpdater(ctx, &order, &user)
+		default:
 		}
 	}
 	return nil
