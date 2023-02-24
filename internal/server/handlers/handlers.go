@@ -22,9 +22,13 @@ import (
 
 var (
 	ErrUnmarshal = errors.New("ошибка десериализации/сериализации")
-	ErrBlackBox  = errors.New("ошибка обращения в систему расчета")
+
 	ErrBodyRead  = errors.New("ошибка чтения ответа")
 	ErrBodyClose = errors.New("неудалось закрыть тело запроса")
+
+	ErrNoContent  = errors.New("нет данных для ответа")
+	ErrBlackBox   = errors.New("ошибка обращения в систему расчета")
+	ErrRetryLater = errors.New("попрбобуй обратиться позже")
 )
 
 type Handler struct {
@@ -264,20 +268,40 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	case database.ErrRowAlreadyExists:
 		w.WriteHeader(http.StatusOK)
 		return
-	case nil:
-		err = h.db.InsertOrderWithContext(ctx, &order)
-		if err != nil {
-			log.Printf("%s", err)
-		}
-
-		err = h.checkOrderStatus(&order)
-
-		w.WriteHeader(http.StatusAccepted)
-		return
+	default:
 	}
+
+	err = h.db.InsertOrderWithContext(ctx, &order)
+	if err != nil {
+		log.Printf("%s: %s", database.ErrConnectToDB, err)
+	}
+
+	timer := time.NewTimer(0)
+
+	select {
+	case <-timer.C:
+		dur, err := h.checkOrderStatus(&order)
+		log.Println("I m here mow ", dur, err)
+		switch err {
+		case ErrNoContent:
+			w.WriteHeader(http.StatusAccepted)
+			return
+		case ErrBlackBox:
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		case nil:
+			w.WriteHeader(http.StatusOK)
+			return
+		case ErrRetryLater:
+			timer.Reset(time.Duration(dur))
+		}
+	}
+
+	return
+
 }
 
-func (h *Handler) checkOrderStatus(order *storage.Order) error {
+func (h *Handler) checkOrderStatus(order *storage.Order) (int, error) {
 
 	var body []byte
 
@@ -285,49 +309,39 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 
 	ctx := context.Background()
 	url, _ := url2.JoinPath(h.cfg.BlackBox, "api", "orders", order.Number)
-	timer := time.NewTimer(time.Duration(dur))
 
-	for {
-		select {
-		case <-timer.C:
-
-			r, err := http.Get(url)
-			if err != nil {
-				return ErrBlackBox
-			}
-
-			body, err = io.ReadAll(r.Body)
-			if err != nil {
-				log.Printf("%s", ErrBodyRead)
-				return ErrBodyRead
-			}
-
-			err = json.Unmarshal(body, order)
-			if err != nil {
-				return ErrUnmarshal
-			}
-
-			log.Println("//////////", order)
-
-			switch r.StatusCode {
-			case http.StatusNoContent:
-				return nil
-			case http.StatusOK:
-				if err = h.db.SetStatus(ctx, order); err != nil {
-					return err
-				}
-				return nil
-			case http.StatusTooManyRequests:
-				dur, err = strconv.Atoi(r.Header.Get("Retry-After"))
-				if err != nil {
-					log.Printf("%s", err)
-					return err
-				}
-
-				timer = time.NewTimer(time.Duration(dur))
-			}
-		}
+	r, err := http.Get(url)
+	if err != nil {
+		return 0, ErrBlackBox
 	}
+
+	body, err = io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("%s", ErrBodyRead)
+		return 0, ErrBodyRead
+	}
+
+	err = json.Unmarshal(body, order)
+	if err != nil {
+		return 0, ErrUnmarshal
+	}
+
+	log.Println("//////////", order)
+
+	switch r.StatusCode {
+	case http.StatusOK:
+		if err = h.db.SetStatus(ctx, order); err != nil {
+			return 0, err
+		}
+		return 0, nil
+	case http.StatusNoContent:
+		return 0, ErrNoContent
+	case http.StatusTooManyRequests:
+		dur, _ = strconv.Atoi(r.Header.Get("Retry-After"))
+		return dur, ErrRetryLater
+	}
+
+	return 0, ErrBlackBox
 }
 
 func (h *Handler) Withdraw(w http.ResponseWriter, _ *http.Request) {
@@ -358,6 +372,7 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("ПОЛЬЗОВАТЕЛЬ ", user)
+
 	orderList, err = h.db.GetAllUserOrders(ctx, &user)
 	switch err {
 	case database.ErrConnectToDB:
@@ -381,7 +396,7 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(resp)
+		_, _ = w.Write(resp)
 		w.WriteHeader(http.StatusOK)
 		return
 	default:
