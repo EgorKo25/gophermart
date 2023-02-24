@@ -178,25 +178,38 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 	queries := []string{"SELECT EXISTS(SELECT * FROM orders WHERE user_login = $1 AND order_number = $2)",
 		"SELECT EXISTS(SELECT * FROM orders WHERE order_number = $2)",
 	}
+	r, err := d.db.QueryContext(childCtx, queries[0],
+		order.User,
+		order.Number,
+	)
 
-	for _, query := range queries {
-		r, err := d.db.QueryContext(childCtx, query,
-			order.User,
-			order.Number,
-		)
-		if err != nil {
-			return ErrConnectToDB
-		}
-
-		r.Next()
-		r.Scan(&result)
-
-		if result {
-			return ErrRowAlreadyExists
-		}
+	if err != nil {
+		return ErrConnectToDB
 	}
 
-	return ErrRowWasCreatedAnyUser
+	r.Next()
+	r.Scan(&result)
+
+	if result {
+		return ErrRowAlreadyExists
+	}
+	r, err = d.db.QueryContext(childCtx, queries[1],
+		order.User,
+		order.Number,
+	)
+
+	if err != nil {
+		return ErrConnectToDB
+	}
+
+	r.Next()
+	r.Scan(&result)
+
+	if result {
+		return ErrRowWasCreatedAnyUser
+	}
+
+	return nil
 
 }
 
