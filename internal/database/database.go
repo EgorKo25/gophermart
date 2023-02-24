@@ -106,7 +106,6 @@ func (d *UserDB) GetAllOrders(ctx context.Context) (orders []storage.Order, err 
 			return orders, err
 		}
 
-		log.Println("OHL::: ", ord)
 		orders = append(orders, ord)
 	}
 	if err = rows.Err(); err != nil {

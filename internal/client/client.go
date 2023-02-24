@@ -41,7 +41,7 @@ func (c *Client) OrdersUpdater() {
 
 	orders, err := c.db.GetAllOrders(ctx)
 	if err != nil {
-		log.Printf("%s", err)
+		log.Fatalf("%s", err)
 	}
 
 	for _, order := range orders {
@@ -75,7 +75,6 @@ func (c *Client) checkOrderStatus(order *storage.Order) (int, error) {
 
 			body, err = io.ReadAll(r.Body)
 			if err != nil {
-				log.Printf("%s", handlers.ErrBodyRead)
 				return 0, handlers.ErrBodyRead
 			}
 

@@ -13,6 +13,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/theplant/luhn"
 )
@@ -263,6 +264,9 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		return
 	default:
 	}
+
+	order.Status = "NEW"
+	order.Uploaded_at = time.Now().Format(time.RFC3339)
 
 	err = h.db.InsertOrderWithContext(ctx, &order)
 	if err != nil {
