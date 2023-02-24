@@ -176,7 +176,7 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 	defer cancel()
 
 	queries := []string{"SELECT EXISTS(SELECT * FROM orders WHERE user_login = $1 AND order_number = $2)",
-		"SELECT EXISTS(SELECT * FROM orders WHERE order_number = $2)",
+		"SELECT EXISTS(SELECT * FROM orders WHERE order_number = $1)",
 	}
 	r, err := d.db.QueryContext(childCtx, queries[0],
 		order.User,
@@ -194,7 +194,6 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 		return ErrRowAlreadyExists
 	}
 	r, err = d.db.QueryContext(childCtx, queries[1],
-		order.User,
 		order.Number,
 	)
 
