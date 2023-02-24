@@ -1,6 +1,7 @@
 package main
 
 import (
+	client2 "gophermart/internal/client"
 	"gophermart/internal/cookies"
 	"log"
 	"net/http"
@@ -19,6 +20,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("%s", err)
 	}
+
+	client := client2.NewClient(cfg, db)
+	go func() {
+		for {
+			client.OrdersUpdater()
+		}
+	}()
 
 	cookie := cookies.NewCookieManager(cfg.SecretCookieKey, db)
 

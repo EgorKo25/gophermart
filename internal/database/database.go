@@ -84,6 +84,36 @@ func (d *UserDB) SetStatus(ctx context.Context, order *storage.Order) error {
 	return nil
 
 }
+func (d *UserDB) GetAllOrders(ctx context.Context) (orders []storage.Order, err error) {
+
+	var ord storage.Order
+
+	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
+	query := "SELECT * FROM orders"
+
+	rows, err := d.db.QueryContext(childCtx, query)
+	if err != nil {
+		return orders, ErrConnectToDB
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err = rows.Scan(&ord.ID, &ord.User, &ord.Number, &ord.Status,
+			&ord.Accrual, &ord.Uploaded_at,
+		); err != nil {
+			return orders, err
+		}
+
+		log.Println("OHL::: ", ord)
+		orders = append(orders, ord)
+	}
+	if err = rows.Err(); err != nil {
+		return orders, err
+	}
+	return orders, nil
+}
 func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (orders []storage.Order, err error) {
 
 	var ord storage.Order

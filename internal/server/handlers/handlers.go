@@ -5,17 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
-	"log"
-	"net/http"
-	url2 "net/url"
-	"strconv"
-	"time"
-
 	"gophermart/internal/config"
 	"gophermart/internal/cookies"
 	"gophermart/internal/database"
 	"gophermart/internal/storage"
+	"io"
+	"log"
+	"net/http"
+	"strconv"
 
 	"github.com/theplant/luhn"
 )
@@ -25,10 +22,6 @@ var (
 
 	ErrBodyRead  = errors.New("ошибка чтения ответа")
 	ErrBodyClose = errors.New("неудалось закрыть тело запроса")
-
-	ErrNoContent  = errors.New("нет данных для ответа")
-	ErrBlackBox   = errors.New("ошибка обращения в систему расчета")
-	ErrRetryLater = errors.New("попрбобуй обратиться позже")
 )
 
 type Handler struct {
@@ -276,72 +269,9 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s: %s", database.ErrConnectToDB, err)
 	}
 
-	timer := time.NewTimer(0)
-
-	select {
-	case <-timer.C:
-		dur, err := h.checkOrderStatus(&order)
-		log.Println("I m here mow ", dur, err)
-		switch err {
-		case ErrNoContent:
-			w.WriteHeader(http.StatusAccepted)
-			return
-		case ErrBlackBox:
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		case nil:
-			w.WriteHeader(http.StatusOK)
-			return
-		case ErrRetryLater:
-			timer.Reset(time.Duration(dur))
-		}
-	}
-
+	w.WriteHeader(http.StatusAccepted)
 	return
 
-}
-
-func (h *Handler) checkOrderStatus(order *storage.Order) (int, error) {
-
-	var body []byte
-
-	dur := 0
-
-	ctx := context.Background()
-	url, _ := url2.JoinPath(h.cfg.BlackBox, "api", "orders", order.Number)
-
-	r, err := http.Get(url)
-	if err != nil {
-		return 0, ErrBlackBox
-	}
-
-	body, err = io.ReadAll(r.Body)
-	if err != nil {
-		log.Printf("%s", ErrBodyRead)
-		return 0, ErrBodyRead
-	}
-
-	err = json.Unmarshal(body, order)
-	if err != nil {
-		return 0, ErrUnmarshal
-	}
-
-	log.Println("//////////", order)
-
-	switch r.StatusCode {
-	case http.StatusOK:
-		if err = h.db.SetStatus(ctx, order); err != nil {
-			return 0, err
-		}
-		return 0, nil
-	case http.StatusNoContent:
-		return 0, ErrNoContent
-	case http.StatusTooManyRequests:
-		dur, _ = strconv.Atoi(r.Header.Get("Retry-After"))
-		return dur, ErrRetryLater
-	}
-
-	return 0, ErrBlackBox
 }
 
 func (h *Handler) Withdraw(w http.ResponseWriter, _ *http.Request) {
@@ -371,19 +301,13 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("ПОЛЬЗОВАТЕЛЬ ", user)
-
 	orderList, err = h.db.GetAllUserOrders(ctx, &user)
 	switch err {
 	case database.ErrConnectToDB:
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	case nil:
-		log.Println(orderList)
-
 		if len(orderList) == 0 {
-
-			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
@@ -398,9 +322,6 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_, _ = w.Write(resp)
 		w.WriteHeader(http.StatusOK)
-		return
-	default:
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
