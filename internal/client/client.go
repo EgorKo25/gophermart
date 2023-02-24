@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"gophermart/internal/database"
 	"io"
 	"net/http"
 	url2 "net/url"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"gophermart/internal/config"
+	"gophermart/internal/database"
 	"gophermart/internal/server/handlers"
 	"gophermart/internal/storage"
 )
@@ -34,11 +34,14 @@ func NewClient(cfg *config.Config, db *database.UserDB) *Client {
 	}
 }
 
-func (c *Client) OrdersUpdater() {
+func (c *Client) OrdersUpdater() error {
 
 	ctx := context.Background()
 
-	orders, _ := c.db.GetAllOrders(ctx)
+	orders, err := c.db.GetAllOrders(ctx)
+	if err != nil {
+		return err
+	}
 
 	for _, order := range orders {
 		switch order.Status {
@@ -48,7 +51,7 @@ func (c *Client) OrdersUpdater() {
 		default:
 		}
 	}
-
+	return nil
 }
 
 func (c *Client) checkOrderStatus(order *storage.Order) (int, error) {

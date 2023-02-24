@@ -1,13 +1,14 @@
 package router
 
 import (
+	"gophermart/internal/cookies"
 	"gophermart/internal/server/handlers"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 )
 
-func NewRouter(handler *handlers.Handler) chi.Router {
+func NewRouter(handler *handlers.Handler, cookie *cookies.CookieManager) chi.Router {
 	r := chi.NewRouter()
 
 	r.Use(middleware.Logger)

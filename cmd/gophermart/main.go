@@ -24,7 +24,11 @@ func main() {
 	client := client2.NewClient(cfg, db)
 	go func() {
 		for {
-			client.OrdersUpdater()
+			err = client.OrdersUpdater()
+			if err != nil {
+				log.Printf("%s", err)
+				return
+			}
 		}
 	}()
 
@@ -32,7 +36,7 @@ func main() {
 
 	handler := handlers.NewHandler(db, cookie, cfg)
 
-	myRouter := router.NewRouter(handler)
+	myRouter := router.NewRouter(handler, cookie)
 
 	log.Println(http.ListenAndServe(cfg.Address, myRouter))
 }
