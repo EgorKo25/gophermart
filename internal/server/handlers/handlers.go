@@ -270,12 +270,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 			log.Printf("%s", err)
 		}
 
-		go func() {
-			err = h.checkOrderStatus(&order)
-			if err != nil {
-				log.Printf("%s", err)
-			}
-		}()
+		err = h.checkOrderStatus(&order)
 
 		w.WriteHeader(http.StatusAccepted)
 		return
@@ -312,7 +307,7 @@ func (h *Handler) checkOrderStatus(order *storage.Order) error {
 				return ErrUnmarshal
 			}
 
-			log.Println(order)
+			log.Println("//////////", order)
 
 			switch r.StatusCode {
 			case http.StatusNoContent:
@@ -390,8 +385,6 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		return
 	default:
-		log.Println(err)
-		log.Println(orderList)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}

@@ -88,9 +88,12 @@ func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (orde
 
 	var ord storage.Order
 
+	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
 	query := "SELECT * FROM orders WHERE user_login = $1"
 
-	rows, err := d.db.QueryContext(ctx, query,
+	rows, err := d.db.QueryContext(childCtx, query,
 		user.Login,
 	)
 	if err != nil {
