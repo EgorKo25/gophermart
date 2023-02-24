@@ -87,7 +87,7 @@ func (d *UserDB) CheckMyBalance(ctx context.Context, user *storage.User) error {
 
 }
 
-func (d *UserDB) getBall(user *storage.User) error {
+func (d *UserDB) GetBall(user *storage.User) error {
 
 	bal := 0.0
 	with := 0.0
@@ -113,7 +113,7 @@ func (d *UserDB) UserUpdater(ctx context.Context, order *storage.Order, user *st
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	err := d.getBall(user)
+	err := d.GetBall(user)
 	if err != nil {
 		return err
 	}

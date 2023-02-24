@@ -46,9 +46,53 @@ func (h *Handler) Withdrawals(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) Balance(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
 
+	var user storage.User
+	var err error
+	var body []byte
+
+	cookieA := r.Cookies()
+	user.Login, err = h.cookies.CheckCookie(&user, cookieA)
+
+	switch {
+	case err == database.ErrConnectToDB:
+		log.Printf("Ошибка: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	case err == database.ErrRowDoesntExists:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	case err == cookies.ErrNoCookie:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	case err == cookies.ErrInvalidValue:
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	case err != nil:
+		log.Printf("Ошибка: %s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	default:
+	}
+
+	err = h.db.GetBall(&user)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	body, err = json.Marshal(user)
+	if err != nil {
+		log.Printf("%e: %e", ErrUnmarshal, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	_, _ = w.Write(body)
 	w.WriteHeader(http.StatusOK)
+	return
 }
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
