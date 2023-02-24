@@ -16,9 +16,10 @@ import (
 )
 
 var (
-	ErrRowAlreadyExists = errors.New("запись в бд уже сущствует")
-	ErrRowDoesntExists  = errors.New("записи в бд не сущетвует")
-	ErrConnectToDB      = errors.New("ошибка обращения в бд")
+	ErrRowWasCreatedAnyUser = errors.New("уже создано другим пользователем")
+	ErrRowAlreadyExists     = errors.New("запись в бд уже сущствует")
+	ErrRowDoesntExists      = errors.New("записи в бд не сущетвует")
+	ErrConnectToDB          = errors.New("ошибка обращения в бд")
 )
 
 type UserDB struct {
@@ -169,12 +170,12 @@ func (d *UserDB) InsertOrderWithContext(ctx context.Context, order *storage.Orde
 
 func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order) error {
 
-	var result bool
+	var result storage.Order
 
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	query := "SELECT EXISTS(SELECT * FROM orders WHERE user_login = $1 AND order_number = $2)"
+	query := "SELECT * FROM orders WHERE order_number = $1"
 
 	r, err := d.db.QueryContext(childCtx, query,
 		order.User,
@@ -182,17 +183,17 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 	)
 
 	if err != nil {
-		return ErrConnectToDB
+		return nil
 	}
 
 	r.Next()
 	r.Scan(&result)
 
-	if result {
-		return ErrRowAlreadyExists
+	if result.User != order.User {
+		return ErrRowWasCreatedAnyUser
 	}
 
-	return nil
+	return ErrRowAlreadyExists
 
 }
 

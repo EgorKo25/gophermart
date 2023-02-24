@@ -263,6 +263,9 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	case database.ErrRowAlreadyExists:
 		w.WriteHeader(http.StatusOK)
 		return
+	case database.ErrRowWasCreatedAnyUser:
+		w.WriteHeader(http.StatusConflict)
+		return
 	default:
 	}
 
