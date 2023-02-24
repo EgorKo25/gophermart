@@ -101,7 +101,7 @@ func (d *UserDB) GetAllOrders(ctx context.Context) (orders []storage.Order, err 
 
 	for rows.Next() {
 		if err = rows.Scan(&ord.ID, &ord.User, &ord.Number, &ord.Status,
-			&ord.Accrual, &ord.Uploaded_at,
+			&ord.Accrual, &ord.UploadedAt,
 		); err != nil {
 			return orders, err
 		}
@@ -132,7 +132,7 @@ func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (orde
 
 	for rows.Next() {
 		if err = rows.Scan(&ord.ID, &ord.User, &ord.Number, &ord.Status,
-			&ord.Accrual, &ord.Uploaded_at,
+			&ord.Accrual, &ord.UploadedAt,
 		); err != nil {
 			return orders, err
 		}
@@ -157,7 +157,7 @@ func (d *UserDB) InsertOrderWithContext(ctx context.Context, order *storage.Orde
 		order.Number,
 		order.Status,
 		order.Accrual,
-		order.Uploaded_at,
+		order.UploadedAt,
 	)
 	if err != nil {
 		return ErrConnectToDB
