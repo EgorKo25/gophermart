@@ -155,7 +155,6 @@ func (c *CookieManager) GetCookie(user *storage.User) (final *http.Cookie, err e
 
 	err = gob.NewEncoder(&buffer).Encode(cookie)
 	if err != nil {
-		log.Printf("Что-то не так:\n%e", ErrGobZip)
 		return nil, ErrGobZip
 	}
 
