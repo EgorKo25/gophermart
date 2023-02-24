@@ -92,9 +92,9 @@ func (d *UserDB) GetBall(user *storage.User) error {
 	bal := 0.0
 	with := 0.0
 
-	query := "SELECT balance, withdrow FROM users WHERE(user_login = $1);"
+	query := "SELECT balance, withdrow FROM users WHERE user_login = $1;"
 
-	r, err := d.db.Query(query)
+	r, err := d.db.Query(query, user.Login)
 	if err != nil {
 		return ErrConnectToDB
 	}
