@@ -245,7 +245,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 
 	order.Number = fmt.Sprintf("%s", body)
 	order.Status = "NEW"
-	order.Uploaded_at = time.Now().Format(time.RFC3339)
+	order.UploadedAt = time.Now().Format(time.RFC3339)
 
 	tmp, _ := strconv.Atoi(order.Number)
 	if isValid := luhn.Valid(tmp); isValid == false {
