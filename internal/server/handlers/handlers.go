@@ -57,7 +57,6 @@ func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
 
 	switch {
 	case err == database.ErrConnectToDB:
-		log.Printf("Ошибка: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	case err == database.ErrRowDoesntExists:
@@ -70,7 +69,6 @@ func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
 		return
 	case err != nil:
-		log.Printf("Ошибка: %s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	default:
@@ -78,6 +76,7 @@ func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
 
 	err = h.db.GetBall(&user)
 	if err != nil {
+		log.Printf("%s", err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
