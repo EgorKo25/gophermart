@@ -6,18 +6,10 @@ type User struct {
 }
 
 type Order struct {
-	ID         int     `json:"omitempty"`
+	ID         int
 	User       string  `json:"omitempty"`
-	Number     string  `json:"number,omitempty"`
-	Status     string  `json:"status,omitempty"`
-	Accrual    float64 `json:"accrual,omitempty"`
+	Number     string  `json:"number"`
+	Status     string  `json:"status"`
+	Accrual    float64 `json:"accrual"`
 	UploadedAt string  `json:"uploaded_at"`
-}
-
-func NewUser(login string, passwd string) *User {
-
-	return &User{
-		Login:  login,
-		Passwd: passwd,
-	}
 }
