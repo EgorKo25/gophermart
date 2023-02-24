@@ -320,7 +320,7 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 
 		resp, err = json.Marshal(orderList)
 		if err != nil {
-			log.Printf("%s: %s", ErrUnmarshal, err)
+			log.Printf("%e: %e", ErrUnmarshal, err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
