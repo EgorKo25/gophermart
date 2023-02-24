@@ -312,6 +312,8 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	case nil:
 		if len(orderList) == 0 {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(resp)
 			w.WriteHeader(http.StatusNoContent)
 			return
 		}
