@@ -47,6 +47,7 @@ func (h *Handler) Withdrawals(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h *Handler) Balance(w http.ResponseWriter, _ *http.Request) {
+
 	w.WriteHeader(http.StatusOK)
 }
 

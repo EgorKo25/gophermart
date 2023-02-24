@@ -5,11 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"gophermart/internal/storage"
+
 	"log"
 	"time"
 
 	"gophermart/internal/config"
+	"gophermart/internal/storage"
 
 	_ "github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -53,7 +54,7 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 	defer cancel()
 
 	queries := []string{
-		"CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, user_login VARCHAR(100), passwd VARCHAR(100));",
+		"CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, user_login VARCHAR(100), passwd VARCHAR(100), balance FLOAT, withdrow FLOAT);",
 		"CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, user_login VARCHAR(100), order_number BIGINT, status VARCHAR(10), accrual FLOAT, uploaded_at VARCHAR(50));",
 	}
 
@@ -66,6 +67,71 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 
 	return nil
 }
+
+func (d *UserDB) CheckMyBalance(ctx context.Context, user *storage.User) error {
+
+	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
+	query := "SELECT balance FROM users WHERE user_login = $1"
+
+	rows, err := d.db.QueryContext(childCtx, query)
+	if err != nil {
+		return ErrConnectToDB
+	}
+
+	rows.Next()
+	_ = rows.Scan(&user.Balance)
+
+	return nil
+
+}
+
+func (d *UserDB) getBall(user *storage.User) error {
+
+	bal := 0.0
+	with := 0.0
+
+	query := "SELECT balance, withdrow FROM users WHERE(user_login = $1);"
+
+	r, err := d.db.Query(query)
+	if err != nil {
+		return ErrConnectToDB
+	}
+
+	r.Next()
+	_ = r.Scan(&bal, &with)
+
+	user.Balance = bal
+	user.Withdraw = with
+
+	return nil
+}
+
+func (d *UserDB) UserUpdater(ctx context.Context, order *storage.Order, user *storage.User) error {
+
+	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
+	err := d.getBall(user)
+	if err != nil {
+		return err
+	}
+
+	query := "UPDATE users SET balance = $1, withdrow = $2 WHERE user_login = $3"
+
+	_, err = d.db.ExecContext(childCtx, query,
+		order.Accrual+user.Balance,
+		order.Accrual+user.Balance,
+		order.User,
+	)
+	if err != nil {
+		return ErrConnectToDB
+	}
+
+	return nil
+}
+
 func (d *UserDB) SetStatus(ctx context.Context, order *storage.Order) error {
 
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
@@ -88,13 +154,14 @@ func (d *UserDB) SetStatus(ctx context.Context, order *storage.Order) error {
 func (d *UserDB) GetAllOrders(ctx context.Context) (orders []storage.Order, err error) {
 
 	var ord storage.Order
+	var rows *sql.Rows
 
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
 	query := "SELECT * FROM orders"
 
-	rows, err := d.db.QueryContext(childCtx, query)
+	rows, err = d.db.QueryContext(childCtx, query)
 	if err != nil {
 		return orders, ErrConnectToDB
 	}
@@ -114,6 +181,7 @@ func (d *UserDB) GetAllOrders(ctx context.Context) (orders []storage.Order, err 
 	}
 	return orders, nil
 }
+
 func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (orders []storage.Order, err error) {
 
 	var ord storage.Order
@@ -138,7 +206,6 @@ func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (orde
 			return orders, err
 		}
 
-		log.Println("OHL::: ", ord)
 		orders = append(orders, ord)
 	}
 	if err = rows.Err(); err != nil {
@@ -188,7 +255,7 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 	}
 
 	r.Next()
-	r.Scan(&result)
+	_ = r.Scan(&result)
 
 	if result {
 		return ErrRowAlreadyExists
@@ -202,7 +269,7 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 	}
 
 	r.Next()
-	r.Scan(&result)
+	_ = r.Scan(&result)
 
 	if result {
 		return ErrRowWasCreatedAnyUser
@@ -220,7 +287,12 @@ func (d *UserDB) InsertUserWithContext(ctx context.Context, user *storage.User) 
 		return ErrConnectToDB
 	}
 
-	_, err := d.db.ExecContext(childCtx, "INSERT INTO users (user_login, passwd) VALUES($1, $2);", user.Login, user.Passwd)
+	_, err := d.db.ExecContext(childCtx, "INSERT INTO users (user_login, passwd, balance, withdrow) VALUES($1, $2, $3, $4);",
+		user.Login,
+		user.Passwd,
+		user.Balance,
+		user.Withdraw,
+	)
 	if err != nil {
 		return ErrConnectToDB
 	}
@@ -246,7 +318,7 @@ func (d *UserDB) CheckUserWithContext(ctx context.Context, user *storage.User) e
 	}
 
 	r.Next()
-	r.Scan(&result)
+	_ = r.Scan(&result)
 
 	if result {
 		return nil
