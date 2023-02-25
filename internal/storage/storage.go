@@ -15,3 +15,10 @@ type Order struct {
 	Accrual    float64 `json:"accrual,sum,omitempty"`
 	UploadedAt string  `json:"uploaded_at,omitempty"`
 }
+
+type Withdraw struct {
+	ID          int
+	NumberOrder string  `json:"number"`
+	Sum         float64 `json:"sum"`
+	ProcessedAt string  `json:"processed_at"`
+}
