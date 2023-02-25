@@ -41,8 +41,54 @@ func (h *Handler) MainPage(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) Withdrawals(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) AllWithdrawals(w http.ResponseWriter, r *http.Request) {
+	ctx := context.Background()
 
+	var resp []byte
+	var err error
+	var user storage.User
+	var withdrawalsList []storage.Withdraw
+
+	cookie := r.Cookies()
+
+	user.Login, err = h.cookies.CheckCookie(nil, cookie)
+	switch err {
+	case cookies.ErrNoCookie:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	case cookies.ErrCipher:
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	case cookies.ErrInvalidValue:
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	withdrawalsList, err = h.db.GetAllWithdraw(ctx, &user)
+	switch err {
+	case database.ErrConnectToDB:
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	case nil:
+		if len(withdrawalsList) == 0 {
+			w.Header().Set("Content-Type", "application/json")
+			_, _ = w.Write(resp)
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+
+		resp, err = json.Marshal(withdrawalsList)
+		if err != nil {
+			log.Printf("%e: %e", ErrUnmarshal, err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write(resp)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 }
 
 func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
@@ -391,7 +437,12 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.db.Withdraw(ctx, &order, &user)
+	withdraw.User = user.Login
+	withdraw.NumberOrder = order.Number
+	withdraw.Sum = order.Accrual
+	withdraw.ProcessedAt = time.Now().Format(time.RFC3339)
+
+	err = h.db.Withdraw(ctx, &order, &user, &withdraw)
 	switch err {
 	case database.ErrConnectToDB:
 		log.Printf("%s: %s", database.ErrConnectToDB, err)
@@ -399,17 +450,6 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	case database.ErrNotEnoughMoney:
 		w.WriteHeader(http.StatusPaymentRequired)
-		return
-	}
-
-	withdraw.NumberOrder = order.Number
-	withdraw.Sum = order.Accrual
-	withdraw.ProcessedAt = time.Now().Format(time.RFC3339)
-
-	err = h.db.InsertWithdraw(ctx, &withdraw)
-	if err != nil {
-		log.Printf("%s", err)
-		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 

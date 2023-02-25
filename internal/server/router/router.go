@@ -15,7 +15,7 @@ func NewRouter(handler *handlers.Handler) chi.Router {
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", handler.MainPage)
 		r.Get("/api/user/orders", handler.AllOrder)
-		r.Get("/api/user/withdrawals", handler.Withdrawals)
+		r.Get("/api/user/withdrawals", handler.AllWithdrawals)
 		r.Get("/api/user/balance", handler.Balance)
 
 		r.Post("/api/user/register", handler.Register)

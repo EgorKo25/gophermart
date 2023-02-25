@@ -57,7 +57,7 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 	defer cancel()
 
 	queries := []string{
-		"CREATE TABLE IF NOT EXISTS withdrawals (id SERIAL PRIMARY KEY, number BIGINT, sum FLOAT, processed_at VARCHAR(50))",
+		"CREATE TABLE IF NOT EXISTS withdrawals (id SERIAL PRIMARY KEY, number BIGINT, sum FLOAT, processed_at VARCHAR(50), user_login VARCHAR(20))",
 		"CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, user_login VARCHAR(100), passwd VARCHAR(100), balance FLOAT, withdrow FLOAT);",
 		"CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, user_login VARCHAR(100), order_number BIGINT, status VARCHAR(10), accrual FLOAT, uploaded_at VARCHAR(50));",
 	}
@@ -112,25 +112,7 @@ func (d *UserDB) GetBall(user *storage.User) error {
 	return nil
 }
 
-func (d *UserDB) InsertWithdraw(ctx context.Context, withdraw *storage.Withdraw) error {
-	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
-	defer cancel()
-
-	query := "INSERT INTO withdrawals (number, sum, processed_at) VALUES($1, $2, $3);"
-
-	_, err := d.db.ExecContext(childCtx, query,
-		withdraw.NumberOrder,
-		withdraw.Sum,
-		withdraw.Sum,
-	)
-	if err != nil {
-		return ErrConnectToDB
-	}
-
-	return nil
-}
-
-func (d *UserDB) Withdraw(ctx context.Context, order *storage.Order, user *storage.User) error {
+func (d *UserDB) Withdraw(ctx context.Context, order *storage.Order, user *storage.User, withdraw *storage.Withdraw) error {
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
@@ -155,11 +137,25 @@ func (d *UserDB) Withdraw(ctx context.Context, order *storage.Order, user *stora
 		return ErrConnectToDB
 	}
 
+	query = "INSERT INTO withdrawals (number, sum, processed_at) VALUES($1, $2, $3, $4);"
+
+	_, err = d.db.ExecContext(childCtx, query,
+		withdraw.NumberOrder,
+		withdraw.Sum,
+		withdraw.ProcessedAt,
+		withdraw.User,
+	)
+	if err != nil {
+		return ErrConnectToDB
+	}
+
+	return nil
+
 	return nil
 
 }
 
-func (d *UserDB) GetAllWithdraw(ctx context.Context) (withdrawals []storage.Withdraw, err error) {
+func (d *UserDB) GetAllWithdraw(ctx context.Context, user *storage.User) (withdrawals []storage.Withdraw, err error) {
 
 	var wtd storage.Withdraw
 	var rows *sql.Rows
@@ -167,9 +163,9 @@ func (d *UserDB) GetAllWithdraw(ctx context.Context) (withdrawals []storage.With
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	query := "SELECT * FROM withdrawals"
+	query := "SELECT * FROM withdrawals WHERE user_login = $1"
 
-	rows, err = d.db.QueryContext(childCtx, query)
+	rows, err = d.db.QueryContext(childCtx, query, user.Login)
 	if err != nil {
 		return withdrawals, ErrConnectToDB
 	}

@@ -18,6 +18,7 @@ type Order struct {
 
 type Withdraw struct {
 	ID          int
+	User        string  `json:"user"`
 	NumberOrder string  `json:"number"`
 	Sum         float64 `json:"sum"`
 	ProcessedAt string  `json:"processed_at"`
