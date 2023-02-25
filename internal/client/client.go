@@ -7,12 +7,10 @@ import (
 	"io"
 	"net/http"
 	url2 "net/url"
-	"strconv"
 	"time"
 
 	"gophermart/internal/config"
 	"gophermart/internal/database"
-	"gophermart/internal/server/handlers"
 	"gophermart/internal/storage"
 )
 
@@ -49,18 +47,16 @@ func (c *Client) OrdersUpdater() error {
 		case "PROCESSING":
 		case "NEW":
 			c.checkOrderStatus(&order)
-			c.db.UserUpdater(ctx, &order, &user)
+			_ = c.db.UserBalanceUpdater(ctx, &order, &user)
 		default:
 		}
 	}
 	return nil
 }
 
-func (c *Client) checkOrderStatus(order *storage.Order) (int, error) {
+func (c *Client) checkOrderStatus(order *storage.Order) {
 
 	var body []byte
-
-	dur := 0
 
 	ctx := context.Background()
 	url, _ := url2.JoinPath(c.cfg.BlackBox, "api", "orders", order.Number)
@@ -71,33 +67,33 @@ func (c *Client) checkOrderStatus(order *storage.Order) (int, error) {
 		for {
 			r, err := http.Get(url)
 			if err != nil {
-				return 0, ErrBlackBox
+				return
 			}
 
 			body, err = io.ReadAll(r.Body)
 			if err != nil {
-				return 0, handlers.ErrBodyRead
+				return
 			}
 
 			err = json.Unmarshal(body, order)
 			if err != nil {
-				return 0, handlers.ErrUnmarshal
+				return
 			}
 
 			switch r.StatusCode {
 			case http.StatusOK:
 				if err = c.db.SetStatus(ctx, order); err != nil {
-					return 0, err
+					return
 				}
-				return 0, nil
+				return
 			case http.StatusNoContent:
-				return 0, ErrNoContent
+				return
 			case http.StatusTooManyRequests:
-				dur, _ = strconv.Atoi(r.Header.Get("Retry-After"))
-				return dur, ErrRetryLater
+				//dur, _ = strconv.Atoi(r.Header.Get("Retry-After"))
+				return
 			}
 
-			return 0, ErrBlackBox
+			return
 		}
 
 	}
