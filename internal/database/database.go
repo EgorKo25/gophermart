@@ -128,7 +128,7 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 
 	_, err = d.db.ExecContext(childCtx, query,
 		withdraw.Sum,
-		withdraw.Sum+user.Withdraw,
+		withdraw.Sum,
 		withdraw.User,
 	)
 	if err != nil {
