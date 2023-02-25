@@ -336,7 +336,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	order.Status = "NEW"
 	order.UploadedAt = time.Now().Format(time.RFC3339)
 
-	err = h.luhnCheck(&order)
+	err = h.luhnCheck(order.Number)
 	if err != nil {
 		log.Printf("%s", err)
 		w.WriteHeader(http.StatusUnprocessableEntity)
@@ -369,8 +369,8 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (h *Handler) luhnCheck(order *storage.Order) error {
-	tmp, _ := strconv.Atoi(order.Number)
+func (h *Handler) luhnCheck(number string) error {
+	tmp, _ := strconv.Atoi(number)
 	if isValid := luhn.Valid(tmp); isValid == false {
 		return database.ErrNumberFormat
 	}
@@ -381,14 +381,13 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 	var user storage.User
-	var order storage.Order
 	var withdraw storage.Withdraw
 	var body []byte
 
 	ctx := context.Background()
 
 	cookieA := r.Cookies()
-	user.Login, err = h.cookies.CheckCookie(&user, cookieA)
+	withdraw.User, err = h.cookies.CheckCookie(&user, cookieA)
 
 	switch {
 	case err == database.ErrConnectToDB:
@@ -423,26 +422,23 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	err = json.Unmarshal(body, &order)
+	err = json.Unmarshal(body, &withdraw)
 	if err != nil {
 		log.Printf("%s: %s", ErrUnmarshal, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
-	err = h.luhnCheck(&order)
+	err = h.luhnCheck(withdraw.NumberOrder)
 	if err != nil {
 		log.Printf("%s", err)
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
-	withdraw.User = user.Login
-	withdraw.NumberOrder = order.Number
-	withdraw.Sum = order.Accrual
 	withdraw.ProcessedAt = time.Now().Format(time.RFC3339)
 
-	err = h.db.Withdraw(ctx, &order, &user, &withdraw)
+	err = h.db.Withdraw(ctx, &user, &withdraw)
 	switch err {
 	case database.ErrConnectToDB:
 		log.Printf("%s: %s", database.ErrConnectToDB, err)

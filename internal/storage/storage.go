@@ -10,16 +10,16 @@ type User struct {
 type Order struct {
 	ID         int
 	User       string  `json:"user,omitempty"`
-	Number     string  `json:"number,order,omitempty"`
+	Number     string  `json:"number,omitempty"`
 	Status     string  `json:"status,omitempty"`
-	Accrual    float64 `json:"accrual,sum,omitempty"`
+	Accrual    float64 `json:"accrual,omitempty"`
 	UploadedAt string  `json:"uploaded_at,omitempty"`
 }
 
 type Withdraw struct {
 	ID          int
 	User        string  `json:"user"`
-	NumberOrder string  `json:"number"`
+	NumberOrder string  `json:"order"`
 	Sum         float64 `json:"sum"`
 	ProcessedAt string  `json:"processed_at"`
 }
