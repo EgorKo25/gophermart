@@ -113,7 +113,7 @@ func (d *UserDB) GetBall(user *storage.User) error {
 }
 
 func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *storage.Withdraw) error {
-	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	childCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
 	err := d.GetBall(user)
@@ -122,7 +122,7 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 	}
 
 	balance := user.Balance - withdraw.Sum
-	if balance < 0 {
+	if balance <= 0 {
 		return ErrNotEnoughMoney
 	}
 
@@ -137,7 +137,7 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 		return ErrConnectToDB
 	}
 
-	query = "INSERT INTO withdrawals (number, sum, processed_at) VALUES($1, $2, $3, $4);"
+	query = "INSERT INTO withdrawals (number, sum, processed_at, user_login) VALUES($1, $2, $3, $4);"
 
 	_, err = d.db.ExecContext(childCtx, query,
 		withdraw.NumberOrder,
