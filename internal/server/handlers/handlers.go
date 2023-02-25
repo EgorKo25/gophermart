@@ -18,8 +18,10 @@ import (
 )
 
 var (
-	ErrUnmarshal = errors.New("ошибка десериализации/сериализации")
+	ErrNotEnoughMoney = errors.New("не достаточно средств на счету")
+	ErrNumberFormat   = errors.New("алгоритм луна выявил неправильный формат заказа")
 
+	ErrUnmarshal = errors.New("ошибка десериализации/сериализации")
 	ErrBodyRead  = errors.New("ошибка чтения ответа")
 	ErrBodyClose = errors.New("неудалось закрыть тело запроса")
 )
@@ -42,8 +44,8 @@ func (h *Handler) MainPage(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func (h *Handler) Withdrawals(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(http.StatusOK)
+func (h *Handler) Withdrawals(w http.ResponseWriter, r *http.Request) {
+
 }
 
 func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
@@ -291,8 +293,9 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	order.Status = "NEW"
 	order.UploadedAt = time.Now().Format(time.RFC3339)
 
-	tmp, _ := strconv.Atoi(order.Number)
-	if isValid := luhn.Valid(tmp); isValid == false {
+	err = h.luhnCheck(&order)
+	if err != nil {
+		log.Printf("%s", err)
 		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
@@ -323,8 +326,86 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func (h *Handler) Withdraw(w http.ResponseWriter, _ *http.Request) {
+func (h *Handler) luhnCheck(order *storage.Order) error {
+	tmp, _ := strconv.Atoi(order.Number)
+	if isValid := luhn.Valid(tmp); isValid == false {
+		return ErrNumberFormat
+	}
+	return nil
+}
+
+func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	var user storage.User
+	var order storage.Order
+	var body []byte
+
+	ctx := context.Background()
+
+	cookieA := r.Cookies()
+	user.Login, err = h.cookies.CheckCookie(&user, cookieA)
+
+	switch {
+	case err == database.ErrConnectToDB:
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	case err == database.ErrRowDoesntExists:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	case err == cookies.ErrNoCookie:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	case err == cookies.ErrInvalidValue:
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	case err != nil:
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	default:
+	}
+
+	body, err = io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("%s: %s", ErrBodyRead, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer func() {
+		err = r.Body.Close()
+		if err != nil {
+			log.Printf("%s", ErrBodyRead)
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+	}()
+
+	err = json.Unmarshal(body, &order)
+	if err != nil {
+		log.Printf("%s: %s", ErrUnmarshal, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	err = h.luhnCheck(&order)
+	if err != nil {
+		log.Printf("%s", err)
+		w.WriteHeader(http.StatusUnprocessableEntity)
+		return
+	}
+
+	err = h.db.Withdraw(ctx, &order, &user)
+	switch err {
+	case database.ErrConnectToDB:
+		log.Printf("%s: %s", database.ErrConnectToDB, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	case ErrNotEnoughMoney:
+		w.WriteHeader(http.StatusPaymentRequired)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
+
 }
 
 func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
