@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"gophermart/internal/server/handlers"
 
 	"log"
 	"time"
@@ -18,6 +17,9 @@ import (
 )
 
 var (
+	ErrNotEnoughMoney = errors.New("не достаточно средств на счету")
+	ErrNumberFormat   = errors.New("алгоритм луна выявил неправильный формат заказа")
+
 	ErrRowAlreadyExists     = errors.New("запись в бд уже сущствует")
 	ErrRowDoesntExists      = errors.New("записи в бд не сущетвует")
 	ErrConnectToDB          = errors.New("ошибка обращения в бд")
@@ -120,7 +122,7 @@ func (d *UserDB) Withdraw(ctx context.Context, order *storage.Order, user *stora
 
 	balance := user.Balance - order.Accrual
 	if balance < 0 {
-		return handlers.ErrNotEnoughMoney
+		return ErrNotEnoughMoney
 	}
 
 	query := "UPDATE users SET withdrow = $1, balance = $2 WHERE user_login = $3"

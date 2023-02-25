@@ -18,9 +18,6 @@ import (
 )
 
 var (
-	ErrNotEnoughMoney = errors.New("не достаточно средств на счету")
-	ErrNumberFormat   = errors.New("алгоритм луна выявил неправильный формат заказа")
-
 	ErrUnmarshal = errors.New("ошибка десериализации/сериализации")
 	ErrBodyRead  = errors.New("ошибка чтения ответа")
 	ErrBodyClose = errors.New("неудалось закрыть тело запроса")
@@ -329,7 +326,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) luhnCheck(order *storage.Order) error {
 	tmp, _ := strconv.Atoi(order.Number)
 	if isValid := luhn.Valid(tmp); isValid == false {
-		return ErrNumberFormat
+		return database.ErrNumberFormat
 	}
 	return nil
 }
@@ -399,7 +396,7 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		log.Printf("%s: %s", database.ErrConnectToDB, err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
-	case ErrNotEnoughMoney:
+	case database.ErrNotEnoughMoney:
 		w.WriteHeader(http.StatusPaymentRequired)
 		return
 	}
