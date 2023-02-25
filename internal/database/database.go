@@ -121,6 +121,7 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 		return err
 	}
 
+	log.Println(user.Balance-withdraw.Sum, withdraw, user)
 	balance := user.Balance - withdraw.Sum
 	if balance <= 0 {
 		return ErrNotEnoughMoney
