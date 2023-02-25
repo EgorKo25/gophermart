@@ -116,6 +116,7 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 	childCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
+	user.Login = withdraw.User
 	err := d.GetBall(user)
 	if err != nil {
 		return err
