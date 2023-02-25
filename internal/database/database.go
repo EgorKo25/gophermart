@@ -57,6 +57,7 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 	defer cancel()
 
 	queries := []string{
+		"CREATE TABLE IF NOT EXISTS withdrawals (id SERIAL PRIMARY KEY, number BIGINT, sum FLOAT, processed_at VARCHAR(50))",
 		"CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, user_login VARCHAR(100), passwd VARCHAR(100), balance FLOAT, withdrow FLOAT);",
 		"CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, user_login VARCHAR(100), order_number BIGINT, status VARCHAR(10), accrual FLOAT, uploaded_at VARCHAR(50));",
 	}
@@ -111,6 +112,24 @@ func (d *UserDB) GetBall(user *storage.User) error {
 	return nil
 }
 
+func (d *UserDB) InsertWithdraw(ctx context.Context, withdraw *storage.Withdraw) error {
+	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
+	query := "INSERT INTO withdrawals (number, sum, processed_at) VALUES($1, $2, $3);"
+
+	_, err := d.db.ExecContext(childCtx, query,
+		withdraw.NumberOrder,
+		withdraw.Sum,
+		withdraw.Sum,
+	)
+	if err != nil {
+		return ErrConnectToDB
+	}
+
+	return nil
+}
+
 func (d *UserDB) Withdraw(ctx context.Context, order *storage.Order, user *storage.User) error {
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
@@ -129,7 +148,7 @@ func (d *UserDB) Withdraw(ctx context.Context, order *storage.Order, user *stora
 
 	_, err = d.db.ExecContext(childCtx, query,
 		order.Accrual+user.Withdraw,
-		user.Balance-order.Accrual,
+		balance,
 		order.User,
 	)
 	if err != nil {
@@ -138,6 +157,35 @@ func (d *UserDB) Withdraw(ctx context.Context, order *storage.Order, user *stora
 
 	return nil
 
+}
+
+func (d *UserDB) GetAllWithdraw(ctx context.Context) (withdrawals []storage.Withdraw, err error) {
+
+	var wtd storage.Withdraw
+	var rows *sql.Rows
+
+	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
+	query := "SELECT * FROM withdrawals"
+
+	rows, err = d.db.QueryContext(childCtx, query)
+	if err != nil {
+		return withdrawals, ErrConnectToDB
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		if err = rows.Scan(&wtd.ID, &wtd.NumberOrder, &wtd.ProcessedAt); err != nil {
+			return withdrawals, err
+		}
+
+		withdrawals = append(withdrawals, wtd)
+	}
+	if err = rows.Err(); err != nil {
+		return withdrawals, err
+	}
+	return withdrawals, nil
 }
 
 func (d *UserDB) UserBalanceUpdater(ctx context.Context, order *storage.Order, user *storage.User) error {
@@ -182,6 +230,7 @@ func (d *UserDB) SetStatus(ctx context.Context, order *storage.Order) error {
 	return nil
 
 }
+
 func (d *UserDB) GetAllOrders(ctx context.Context) (orders []storage.Order, err error) {
 
 	var ord storage.Order

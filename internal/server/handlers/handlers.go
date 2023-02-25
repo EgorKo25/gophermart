@@ -336,6 +336,7 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var user storage.User
 	var order storage.Order
+	var withdraw storage.Withdraw
 	var body []byte
 
 	ctx := context.Background()
@@ -398,6 +399,17 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 		return
 	case database.ErrNotEnoughMoney:
 		w.WriteHeader(http.StatusPaymentRequired)
+		return
+	}
+
+	withdraw.NumberOrder = order.Number
+	withdraw.Sum = order.Accrual
+	withdraw.ProcessedAt = time.Now().Format(time.RFC3339)
+
+	err = h.db.InsertWithdraw(ctx, &withdraw)
+	if err != nil {
+		log.Printf("%s", err)
+		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
 
