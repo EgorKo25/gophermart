@@ -131,7 +131,7 @@ func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	cookie, err = h.cookies.GetCookie(&user)
-	log.Println(cookie)
+
 	switch err {
 	case cookies.ErrValueTooLong:
 		w.WriteHeader(http.StatusBadRequest)

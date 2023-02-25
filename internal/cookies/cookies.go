@@ -11,7 +11,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
@@ -102,7 +101,7 @@ func (c *CookieManager) WriteEncrypt(cookie http.Cookie) (*http.Cookie, error) {
 
 func (c *CookieManager) ReadEncrypt(cookie *http.Cookie, name string, secretKey []byte) (string, error) {
 	encryptedValue, err := c.Read(cookie)
-	log.Println(encryptedValue)
+
 	if err != nil {
 		return "", err
 	}
