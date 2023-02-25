@@ -108,7 +108,31 @@ func (d *UserDB) GetBall(user *storage.User) error {
 	return nil
 }
 
-func (d *UserDB) UserUpdater(ctx context.Context, order *storage.Order, user *storage.User) error {
+func (d *UserDB) Withdraw(ctx context.Context, order *storage.Order, user *storage.User) error {
+	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
+	err := d.GetBall(user)
+	if err != nil {
+		return err
+	}
+
+	query := "UPDATE users SET withdrow = $1, balance = $2 WHERE user_login = $3"
+
+	_, err = d.db.ExecContext(childCtx, query,
+		order.Accrual+user.Withdraw,
+		user.Balance-order.Accrual,
+		order.User,
+	)
+	if err != nil {
+		return ErrConnectToDB
+	}
+
+	return nil
+
+}
+
+func (d *UserDB) UserBalanceUpdater(ctx context.Context, order *storage.Order, user *storage.User) error {
 
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
@@ -118,10 +142,9 @@ func (d *UserDB) UserUpdater(ctx context.Context, order *storage.Order, user *st
 		return err
 	}
 
-	query := "UPDATE users SET balance = $1, withdrow = $2 WHERE user_login = $3"
+	query := "UPDATE users SET balance = $1 WHERE user_login = $2"
 
 	_, err = d.db.ExecContext(childCtx, query,
-		order.Accrual+user.Balance,
 		order.Accrual+user.Balance,
 		order.User,
 	)
