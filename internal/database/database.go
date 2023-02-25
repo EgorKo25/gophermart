@@ -122,16 +122,12 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 	}
 
 	log.Println(user.Balance-withdraw.Sum, withdraw, user)
-	balance := user.Balance - withdraw.Sum
-	if balance <= 0 {
-		return ErrNotEnoughMoney
-	}
 
 	query := "UPDATE users SET withdrow = $1, balance = $2 WHERE user_login = $3"
 
 	_, err = d.db.ExecContext(childCtx, query,
 		withdraw.Sum+user.Withdraw,
-		balance,
+		withdraw.Sum,
 		withdraw.User,
 	)
 	if err != nil {
