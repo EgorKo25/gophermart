@@ -127,8 +127,8 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 	query := "UPDATE users SET withdrow = $1, balance = $2 WHERE user_login = $3"
 
 	_, err = d.db.ExecContext(childCtx, query,
-		withdraw.Sum+user.Withdraw,
 		withdraw.Sum,
+		withdraw.Sum+user.Withdraw,
 		withdraw.User,
 	)
 	if err != nil {
