@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"gophermart/internal/server/handlers"
 
 	"log"
 	"time"
@@ -115,6 +116,11 @@ func (d *UserDB) Withdraw(ctx context.Context, order *storage.Order, user *stora
 	err := d.GetBall(user)
 	if err != nil {
 		return err
+	}
+
+	balance := user.Balance - order.Accrual
+	if balance < 0 {
+		return handlers.ErrNotEnoughMoney
 	}
 
 	query := "UPDATE users SET withdrow = $1, balance = $2 WHERE user_login = $3"
