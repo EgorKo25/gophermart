@@ -36,7 +36,7 @@ func main() {
 
 	handler := handlers.NewHandler(db, cookie, cfg)
 
-	myRouter := router.NewRouter(handler, cookie)
+	myRouter := router.NewRouter(handler)
 
 	log.Println(http.ListenAndServe(cfg.Address, myRouter))
 }
