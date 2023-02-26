@@ -127,6 +127,7 @@ func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Println(user)
 	body, err = json.Marshal(user)
 	if err != nil {
 		log.Printf("%e: %e", ErrUnmarshal, err)
