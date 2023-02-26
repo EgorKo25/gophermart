@@ -97,7 +97,8 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 		return err
 	}
 
-	log.Println(user.Balance-withdraw.Sum, withdraw, user)
+	balance := bal - withdraw.Sum
+	log.Println(balance, withdraw, user)
 	/*
 		balance := bal - withdraw.Sum
 		if balance <= 0 {
@@ -108,7 +109,7 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 
 	_, err = d.db.ExecContext(childCtx, query,
 		with+withdraw.Sum,
-		bal-withdraw.Sum,
+		balance,
 		withdraw.User,
 	)
 	if err != nil {
