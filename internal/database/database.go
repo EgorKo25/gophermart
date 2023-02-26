@@ -124,11 +124,13 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 
 	log.Println(user.Balance-withdraw.Sum, withdraw, user)
 
+	balance := user.Balance - withdraw.Sum
+
 	query := "UPDATE users SET withdrow = $1, balance = $2 WHERE user_login = $3"
 
 	_, err = d.db.ExecContext(childCtx, query,
 		withdraw.Sum,
-		withdraw.Sum,
+		balance,
 		withdraw.User,
 	)
 	if err != nil {
@@ -153,6 +155,21 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 
 }
 
+func (d *UserDB) sortDate(login string) error {
+	query := `
+			SELECT user_login, processed_at 
+			FROM withdrawals 
+			WHERE user_login = $1
+			ORDER BY processed_at
+	`
+
+	_, err := d.db.Exec(query, login)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 func (d *UserDB) GetAllWithdraw(ctx context.Context, user *storage.User) (withdrawals []storage.Withdraw, err error) {
 
 	var wtd storage.Withdraw
@@ -160,6 +177,8 @@ func (d *UserDB) GetAllWithdraw(ctx context.Context, user *storage.User) (withdr
 
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
+
+	d.sortDate(user.Login)
 
 	query := "SELECT * FROM withdrawals WHERE user_login = $1"
 
@@ -192,7 +211,7 @@ func (d *UserDB) UserBalanceUpdater(ctx context.Context, order *storage.Order, u
 		return err
 	}
 
-	query := "UPDATE users SET balance = $1 WHERE user_login = $2"
+	query := "UPDATE users SET balance = $1 AND withdrow = $2 WHERE user_login = $3"
 
 	_, err = d.db.ExecContext(childCtx, query,
 		order.Accrual+user.Balance,

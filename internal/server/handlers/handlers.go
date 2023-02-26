@@ -447,6 +447,7 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 	case database.ErrNotEnoughMoney:
 		w.WriteHeader(http.StatusPaymentRequired)
 		return
+	default:
 	}
 
 	w.WriteHeader(http.StatusOK)
