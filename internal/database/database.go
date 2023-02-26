@@ -215,7 +215,7 @@ func (d *UserDB) UserBalanceUpdater(ctx context.Context, order *storage.Order) e
 		order.User,
 	)
 	if err != nil {
-		return ErrConnectToDB
+		return err
 	}
 
 	return nil

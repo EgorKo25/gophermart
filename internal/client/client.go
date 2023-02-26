@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
 	url2 "net/url"
 	"time"
@@ -47,7 +48,10 @@ func (c *Client) OrdersUpdater() error {
 		case "NEW":
 			c.checkOrderStatus(&order)
 		case "PROCESSED":
-			_ = c.db.UserBalanceUpdater(ctx, &order)
+			err = c.db.UserBalanceUpdater(ctx, &order)
+			if err != nil {
+				log.Println(err)
+			}
 		default:
 		}
 	}
