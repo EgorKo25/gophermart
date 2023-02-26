@@ -48,6 +48,7 @@ func (c *Client) OrdersUpdater() error {
 		case "NEW":
 			c.checkOrderStatus(&order)
 		default:
+			user.Login = order.User
 			_ = c.db.UserBalanceUpdater(ctx, &order, &user)
 		}
 	}
