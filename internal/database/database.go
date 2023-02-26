@@ -110,7 +110,6 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 	childCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
-	user.Login = withdraw.User
 	bal, with, err := d.GetBall(withdraw.User)
 	if err != nil {
 		return err
@@ -123,7 +122,7 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 		return ErrNotEnoughMoney
 	}
 
-	query := "UPDATE users SET withdrow = $1, balance = $2 WHERE user_login = $3"
+	query := "UPDATE users SET withdrow = $1 AND balance = $2 WHERE user_login = $3"
 
 	_, err = d.db.ExecContext(childCtx, query,
 		with+withdraw.Sum,
@@ -145,8 +144,6 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 	if err != nil {
 		return ErrConnectToDB
 	}
-
-	return nil
 
 	return nil
 

@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	url2 "net/url"
 	"time"
@@ -48,10 +47,8 @@ func (c *Client) OrdersUpdater() error {
 		case "NEW":
 			c.checkOrderStatus(&order)
 		case "PROCESSED":
-			err = c.db.UserBalanceUpdater(ctx, &order)
-			if err != nil {
-				log.Println("XEQYZ^ ", err)
-			}
+			_ = c.db.UserBalanceUpdater(ctx, &order)
+
 		default:
 		}
 	}
@@ -93,7 +90,6 @@ func (c *Client) checkOrderStatus(order *storage.Order) {
 			case http.StatusNoContent:
 				return
 			case http.StatusTooManyRequests:
-				//dur, _ = strconv.Atoi(r.Header.Get("Retry-After"))
 				return
 			}
 
