@@ -89,6 +89,10 @@ func (h *Handler) AllWithdrawals(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write(resp)
 		w.WriteHeader(http.StatusOK)
 		return
+	default:
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
 	}
 }
 
