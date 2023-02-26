@@ -123,7 +123,7 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 		withdraw.User,
 	)
 	if err != nil {
-		return ErrConnectToDB
+		return err
 	}
 
 	return nil
