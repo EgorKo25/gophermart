@@ -4,7 +4,7 @@ type User struct {
 	Login    string  `json:"login"`
 	Passwd   string  `json:"password"`
 	Balance  float64 `json:"current"`
-	Withdraw float64 `json:"withdraw"`
+	Withdraw float64 `json:"withdrawn"`
 }
 
 type Order struct {
