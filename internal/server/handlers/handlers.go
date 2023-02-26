@@ -77,6 +77,7 @@ func (h *Handler) AllWithdrawals(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		log.Println(withdrawalsList)
 		resp, err = json.Marshal(withdrawalsList)
 		if err != nil {
 			log.Printf("%e: %e", ErrUnmarshal, err)

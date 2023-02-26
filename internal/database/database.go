@@ -84,6 +84,7 @@ func (d *UserDB) GetBall(user string) (bal, with float64, err error) {
 	r.Next()
 	_ = r.Scan(&bal, &with)
 
+	log.Println(bal, with)
 	return bal, with, nil
 }
 
