@@ -231,7 +231,20 @@ func (d *UserDB) SetStatus(ctx context.Context, order *storage.Order) error {
 		order.Number,
 	)
 	if err != nil {
-		return ErrConnectToDB
+		return err
+	}
+
+	if order.Status == "PROCESSED" {
+		bal, _, _ := d.GetBall(order.User)
+		query = "UPDATE users SET balance = $1 WHERE user_login = $2"
+
+		_, err = d.db.ExecContext(childCtx, query,
+			order.Accrual+bal,
+			order.User,
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
