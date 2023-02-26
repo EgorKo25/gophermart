@@ -166,7 +166,7 @@ func (d *UserDB) GetAllWithdraw(ctx context.Context, user *storage.User) (withdr
 	defer rows.Close()
 
 	for rows.Next() {
-		if err = rows.Scan(&wtd.ID, &wtd.NumberOrder, &wtd.ProcessedAt); err != nil {
+		if err = rows.Scan(&wtd.ID, &wtd.NumberOrder, &wtd.Sum, &wtd.ProcessedAt, &wtd.User); err != nil {
 			return withdrawals, err
 		}
 
