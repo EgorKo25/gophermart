@@ -109,6 +109,8 @@ func (d *UserDB) GetBall(user *storage.User) error {
 	user.Balance = bal
 	user.Withdraw = with
 
+	log.Println("хуйня", user)
+
 	return nil
 }
 
@@ -211,7 +213,7 @@ func (d *UserDB) UserBalanceUpdater(ctx context.Context, order *storage.Order, u
 		return err
 	}
 
-	query := "UPDATE users SET balance = $1 AND withdrow = $2 WHERE user_login = $3"
+	query := "UPDATE users SET balance = $1 WHERE user_login = $2"
 
 	_, err = d.db.ExecContext(childCtx, query,
 		order.Accrual+user.Balance,
