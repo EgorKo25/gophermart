@@ -318,7 +318,7 @@ func (d *UserDB) InsertOrderWithContext(ctx context.Context, order *storage.Orde
 		order.UploadedAt,
 	)
 	if err != nil {
-		return ErrConnectToDB
+		return err
 	}
 
 	return nil

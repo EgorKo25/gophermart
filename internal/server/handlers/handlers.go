@@ -362,6 +362,9 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	err = h.db.InsertOrderWithContext(ctx, &order)
 	if err != nil {
 		log.Printf("%s: %s", database.ErrConnectToDB, err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+
 	}
 
 	w.WriteHeader(http.StatusAccepted)
