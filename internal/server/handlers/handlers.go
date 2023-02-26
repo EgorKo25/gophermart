@@ -119,7 +119,7 @@ func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
 	default:
 	}
 
-	err = h.db.GetBall(&user)
+	user.Balance, user.Withdraw, err = h.db.GetBall(user.Login)
 	if err != nil {
 		log.Printf("%s", err)
 		w.WriteHeader(http.StatusInternalServerError)

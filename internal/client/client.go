@@ -35,7 +35,6 @@ func NewClient(cfg *config.Config, db *database.UserDB) *Client {
 func (c *Client) OrdersUpdater() error {
 
 	ctx := context.Background()
-	var user storage.User
 
 	orders, err := c.db.GetAllOrders(ctx)
 	if err != nil {
@@ -48,7 +47,7 @@ func (c *Client) OrdersUpdater() error {
 		case "NEW":
 			c.checkOrderStatus(&order)
 		case "PROCESSED":
-			_ = c.db.UserBalanceUpdater(ctx, &order, &user)
+			_ = c.db.UserBalanceUpdater(ctx, &order)
 		default:
 		}
 	}

@@ -91,27 +91,19 @@ func (d *UserDB) CheckMyBalance(ctx context.Context, user *storage.User) error {
 
 }
 
-func (d *UserDB) GetBall(user *storage.User) error {
-
-	bal := 0.0
-	with := 0.0
+func (d *UserDB) GetBall(user string) (bal, with float64, err error) {
 
 	query := "SELECT balance, withdrow FROM users WHERE user_login = $1;"
 
-	r, err := d.db.Query(query, user.Login)
+	r, err := d.db.Query(query, user)
 	if err != nil {
-		return ErrConnectToDB
+		return 0, 0, ErrConnectToDB
 	}
 
 	r.Next()
 	_ = r.Scan(&bal, &with)
 
-	user.Balance = bal
-	user.Withdraw = with
-
-	log.Println("хуйня", user)
-
-	return nil
+	return bal, with, nil
 }
 
 func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *storage.Withdraw) error {
@@ -119,19 +111,22 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 	defer cancel()
 
 	user.Login = withdraw.User
-	err := d.GetBall(user)
+	bal, with, err := d.GetBall(withdraw.User)
 	if err != nil {
 		return err
 	}
 
 	log.Println(user.Balance-withdraw.Sum, withdraw, user)
 
-	balance := user.Balance - withdraw.Sum
+	balance := bal - withdraw.Sum
+	if balance <= 0 {
+		return ErrNotEnoughMoney
+	}
 
 	query := "UPDATE users SET withdrow = $1, balance = $2 WHERE user_login = $3"
 
 	_, err = d.db.ExecContext(childCtx, query,
-		withdraw.Sum,
+		with+withdraw.Sum,
 		balance,
 		withdraw.User,
 	)
@@ -203,12 +198,12 @@ func (d *UserDB) GetAllWithdraw(ctx context.Context, user *storage.User) (withdr
 	return withdrawals, nil
 }
 
-func (d *UserDB) UserBalanceUpdater(ctx context.Context, order *storage.Order, user *storage.User) error {
+func (d *UserDB) UserBalanceUpdater(ctx context.Context, order *storage.Order) error {
 
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	err := d.GetBall(user)
+	bal, _, err := d.GetBall(order.User)
 	if err != nil {
 		return err
 	}
@@ -216,7 +211,7 @@ func (d *UserDB) UserBalanceUpdater(ctx context.Context, order *storage.Order, u
 	query := "UPDATE users SET balance = $1 WHERE user_login = $2"
 
 	_, err = d.db.ExecContext(childCtx, query,
-		order.Accrual+user.Balance,
+		order.Accrual+bal,
 		order.User,
 	)
 	if err != nil {
