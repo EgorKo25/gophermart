@@ -285,7 +285,7 @@ func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (orde
 		user.Login,
 	)
 	if err != nil {
-		return orders, ErrConnectToDB
+		return orders, err
 	}
 	defer rows.Close()
 

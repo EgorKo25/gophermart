@@ -50,7 +50,7 @@ func (c *Client) OrdersUpdater() error {
 		case "PROCESSED":
 			err = c.db.UserBalanceUpdater(ctx, &order)
 			if err != nil {
-				log.Println(err)
+				log.Println("XEQYZ^ ", err)
 			}
 		default:
 		}
