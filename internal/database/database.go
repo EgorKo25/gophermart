@@ -72,25 +72,6 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-func (d *UserDB) CheckMyBalance(ctx context.Context, user *storage.User) error {
-
-	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
-	defer cancel()
-
-	query := "SELECT balance FROM users WHERE user_login = $1"
-
-	rows, err := d.db.QueryContext(childCtx, query)
-	if err != nil {
-		return ErrConnectToDB
-	}
-
-	rows.Next()
-	_ = rows.Scan(&user.Balance)
-
-	return nil
-
-}
-
 func (d *UserDB) GetBall(user string) (bal, with float64, err error) {
 
 	query := "SELECT balance, withdrow FROM users WHERE user_login = $1;"
@@ -178,7 +159,7 @@ func (d *UserDB) GetAllWithdraw(ctx context.Context, user *storage.User) (withdr
 
 	rows, err = d.db.QueryContext(childCtx, query, user.Login)
 	if err != nil {
-		return withdrawals, ErrConnectToDB
+		return withdrawals, err
 	}
 	defer rows.Close()
 
