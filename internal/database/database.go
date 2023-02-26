@@ -111,7 +111,7 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 		withdraw.User,
 	)
 	if err != nil {
-		return ErrConnectToDB
+		return err
 	}
 
 	query = "INSERT INTO withdrawals (number, sum, processed_at, user_login) VALUES($1, $2, $3, $4);"
