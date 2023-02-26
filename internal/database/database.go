@@ -213,8 +213,6 @@ func (d *UserDB) UserBalanceUpdater(ctx context.Context, order *storage.Order, u
 		return err
 	}
 
-	log.Println(user)
-
 	query := "UPDATE users SET balance = $1 WHERE user_login = $2"
 
 	_, err = d.db.ExecContext(childCtx, query,
