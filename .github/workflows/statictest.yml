@@ -7,6 +7,7 @@ on:
     branches:
       - master
       - main
+      - final_branch
 
 jobs:
 
