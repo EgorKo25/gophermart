@@ -80,7 +80,13 @@ func (d *UserDB) GetBall(user string) (bal, with float64, err error) {
 	if err != nil {
 		return 0, 0, ErrConnectToDB
 	}
-	defer func() { _ = r.Close() }()
+	defer func() {
+		err = r.Close()
+		if err != nil {
+			log.Printf("%s: %s", ErrConnectToDB, err)
+			return
+		}
+	}()
 
 	r.Next()
 	_ = r.Scan(&bal, &with)
@@ -352,7 +358,13 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 		order.User,
 		order.Number,
 	)
-	defer func() { _ = r.Close() }()
+	defer func() {
+		err = r.Close()
+		if err != nil {
+			log.Printf("%s: %s", ErrConnectToDB, err)
+			return
+		}
+	}()
 
 	if err != nil {
 		return ErrConnectToDB
@@ -371,6 +383,13 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 	if err != nil {
 		return ErrConnectToDB
 	}
+	defer func() {
+		err = r.Close()
+		if err != nil {
+			log.Printf("%s: %s", ErrConnectToDB, err)
+			return
+		}
+	}()
 
 	r.Next()
 	_ = r.Scan(&result)
@@ -420,7 +439,13 @@ func (d *UserDB) CheckUserWithContext(ctx context.Context, user *storage.User) e
 	if err != nil {
 		return ErrConnectToDB
 	}
-	defer func() { _ = r.Close() }()
+	defer func() {
+		err = r.Close()
+		if err != nil {
+			log.Printf("%s: %s", ErrConnectToDB, err)
+			return
+		}
+	}()
 
 	r.Next()
 	_ = r.Scan(&result)
