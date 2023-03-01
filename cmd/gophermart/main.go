@@ -1,7 +1,6 @@
 package main
 
 import (
-	"gophermart/internal/server/middleware"
 	"log"
 	"net/http"
 
@@ -10,6 +9,7 @@ import (
 	"gophermart/internal/cookies"
 	"gophermart/internal/database"
 	"gophermart/internal/server/handlers"
+	"gophermart/internal/server/middleware"
 	"gophermart/internal/server/router"
 )
 
@@ -23,7 +23,12 @@ func main() {
 	}
 
 	clientManager := client.NewClient(cfg, db)
-	go clientManager.Run()
+	go func() {
+		err = clientManager.Run()
+		if err != nil {
+			log.Printf("%s: %s", client.ErrBlackBox, err)
+		}
+	}()
 
 	cookie := cookies.NewCookieManager(cfg.SecretCookieKey, db)
 
