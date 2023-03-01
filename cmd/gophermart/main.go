@@ -1,12 +1,12 @@
 package main
 
 import (
-	client2 "gophermart/internal/client"
-	"gophermart/internal/cookies"
+	"gophermart/internal/client"
 	"log"
 	"net/http"
 
 	"gophermart/internal/config"
+	"gophermart/internal/cookies"
 	"gophermart/internal/database"
 	"gophermart/internal/server/handlers"
 	"gophermart/internal/server/router"
@@ -21,16 +21,8 @@ func main() {
 		log.Fatalf("%s", err)
 	}
 
-	client := client2.NewClient(cfg, db)
-	go func() {
-		for {
-			err = client.OrdersUpdater()
-			if err != nil {
-				log.Printf("%s", err)
-				return
-			}
-		}
-	}()
+	clientManager := client.NewClient(cfg, db)
+	go clientManager.Run()
 
 	cookie := cookies.NewCookieManager(cfg.SecretCookieKey, db)
 

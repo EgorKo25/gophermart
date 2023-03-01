@@ -5,8 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
+	"log"
 	"net/http"
-	url2 "net/url"
+	"net/url"
 	"time"
 
 	"gophermart/internal/config"
@@ -29,6 +30,16 @@ func NewClient(cfg *config.Config, db *database.UserDB) *Client {
 	return &Client{
 		cfg: cfg,
 		db:  db,
+	}
+}
+
+func (c *Client) Run() (err error) {
+	for {
+		err = c.OrdersUpdater()
+		if err != nil {
+			log.Printf("%s", err)
+			return err
+		}
 	}
 }
 
@@ -57,13 +68,13 @@ func (c *Client) checkOrderStatus(order *storage.Order) {
 	var body []byte
 
 	ctx := context.Background()
-	url, _ := url2.JoinPath(c.cfg.BlackBox, "api", "orders", order.Number)
+	addr, _ := url.JoinPath(c.cfg.BlackBox, "api", "orders", order.Number)
 	timer := time.NewTimer(0)
 
 	select {
 	case <-timer.C:
 		for {
-			r, err := http.Get(url)
+			r, err := http.Get(addr)
 			if err != nil {
 				return
 			}
