@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"github.com/gorilla/context"
 	"net/http"
 
 	"gophermart/internal/cookies"
@@ -33,7 +34,7 @@ func (m *Middleware) CookieChecker(next http.Handler) http.Handler {
 			return
 		}
 
-		w.Write([]byte(login))
+		context.Set(r, "login", login)
 
 		next.ServeHTTP(w, r)
 	})
