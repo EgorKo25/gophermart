@@ -357,27 +357,7 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 
 	ctx := context.Background()
 
-	cookieA := r.Cookies()
-	withdraw.User, err = h.cookies.CheckCookie(&user, cookieA)
-
-	switch {
-	case err == database.ErrConnectToDB:
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	case err == database.ErrRowDoesntExists:
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	case err == cookies.ErrNoCookie:
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	case err == cookies.ErrInvalidValue:
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	case err != nil:
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	default:
-	}
+	withdraw.User = gctx.Get(r, "login").(string)
 
 	body, err = io.ReadAll(r.Body)
 	if err != nil {
