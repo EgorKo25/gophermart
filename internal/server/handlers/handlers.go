@@ -5,17 +5,19 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	gctx "github.com/gorilla/context"
-	"github.com/theplant/luhn"
-	"gophermart/internal/config"
-	"gophermart/internal/cookies"
-	"gophermart/internal/database"
-	"gophermart/internal/storage"
 	"io"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/theplant/luhn"
+	"gophermart/internal/config"
+	"gophermart/internal/cookies"
+	"gophermart/internal/database"
+	"gophermart/internal/storage"
+
+	gctx "github.com/gorilla/context"
 )
 
 var (
@@ -36,10 +38,6 @@ func NewHandler(db *database.UserDB, cookies *cookies.CookieManager, cfg *config
 		cookies: cookies,
 		cfg:     cfg,
 	}
-}
-
-func (h *Handler) MainPage(w http.ResponseWriter, _ *http.Request) {
-	w.WriteHeader(http.StatusOK)
 }
 
 func (h *Handler) AllWithdrawals(w http.ResponseWriter, r *http.Request) {
