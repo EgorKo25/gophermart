@@ -26,7 +26,7 @@ func (m *Middleware) CookieChecker(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		var user storage.User
-		var number string
+		var order storage.Order
 
 		cookieA := r.Cookies()
 
@@ -38,7 +38,7 @@ func (m *Middleware) CookieChecker(next http.Handler) http.Handler {
 		}
 
 		if len(body) > 0 {
-			err = json.Unmarshal(body, &number)
+			err = json.Unmarshal(body, &order)
 			if err != nil {
 				log.Println(err)
 				w.WriteHeader(http.StatusInternalServerError)
@@ -69,7 +69,7 @@ func (m *Middleware) CookieChecker(next http.Handler) http.Handler {
 		}
 
 		context.Set(r, "login", user.Login)
-		context.Set(r, "order", number)
+		context.Set(r, "order", order.Number)
 
 		next.ServeHTTP(w, r)
 	})
