@@ -1,10 +1,11 @@
 package main
 
 import (
-	"gophermart/internal/client"
+	"gophermart/internal/server/middleware"
 	"log"
 	"net/http"
 
+	"gophermart/internal/client"
 	"gophermart/internal/config"
 	"gophermart/internal/cookies"
 	"gophermart/internal/database"
@@ -28,7 +29,9 @@ func main() {
 
 	handler := handlers.NewHandler(db, cookie, cfg)
 
-	myRouter := router.NewRouter(handler)
+	middle := middleware.NewMiddleware(cookie)
+
+	myRouter := router.NewRouter(handler, middle)
 
 	log.Println(http.ListenAndServe(cfg.Address, myRouter))
 }
