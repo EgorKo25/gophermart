@@ -66,36 +66,23 @@ func (c *CookieManager) WriteEncrypt(cookie http.Cookie) (*http.Cookie, error) {
 		return nil, err
 	}
 
-	// Wrap the cipher block in Galois Counter Mode.
 	aesGCM, err := cipher.NewGCM(block)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create a unique nonce containing 12 random bytes.
 	nonce := make([]byte, aesGCM.NonceSize())
 	_, err = io.ReadFull(rand.Reader, nonce)
 	if err != nil {
 		return nil, err
 	}
 
-	// Prepare the plaintext input for encryption. Because we want to
-	// authenticate the cookie name as well as the value, we make this plaintext
-	// in the format "{cookie name}:{cookie value}". We use the : character as a
-	// separator because it is an invalid character for cookie names and
-	// therefore shouldn't appear in them.
 	plaintext := fmt.Sprintf("%s:%s", cookie.Name, cookie.Value)
 
-	// Encrypt the data using aesGCM.Seal(). By passing the nonce as the first
-	// parameter, the encrypted data will be appended to the nonce — meaning
-	// that the returned encryptedValue variable will be in the format
-	// "{nonce}{encrypted plaintext data}".
 	encryptedValue := aesGCM.Seal(nonce, nonce, []byte(plaintext), nil)
 
-	// Set the cookie value to the encryptedValue.
 	cookie.Value = string(encryptedValue)
 
-	// Write the cookie as normal.
 	return c.Write(cookie)
 }
 
