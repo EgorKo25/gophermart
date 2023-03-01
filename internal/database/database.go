@@ -76,22 +76,20 @@ func (d *UserDB) GetBall(user string) (float64, float64, error) {
 
 	query := "SELECT balance, withdraw FROM users WHERE user_login = $1;"
 
-	r, err := d.db.Query(query, user)
-	if err != nil {
+	r, error := d.db.Query(query, user)
+	if error != nil {
 		return 0, 0, ErrConnectToDB
 	}
 	defer func() {
-		err = r.Close()
+		err := r.Close()
 		if err != nil {
 			log.Printf("%s: %s", ErrConnectToDB, err)
 			return
 		}
 	}()
 
-	if r.Next() {
-
-	}
-	err = r.Scan(&bal, &with)
+	r.Next()
+	err := r.Scan(&bal, &with)
 	if err != nil {
 		return 0, 0, ErrConnectToDB
 	}
