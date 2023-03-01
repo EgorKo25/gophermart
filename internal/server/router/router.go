@@ -18,7 +18,7 @@ func NewRouter(handler *handlers.Handler, middle *middleware.Middleware) chi.Rou
 		r.Post("/api/user/login", handler.Login)
 	})
 	r.Group(func(r chi.Router) {
-		r.Use(middle.CookieChecker)
+		//r.Use(middle.CookieChecker)
 
 		r.Get("/api/user/orders", handler.AllOrder)
 		r.Get("/api/user/withdrawals", handler.AllWithdrawals)

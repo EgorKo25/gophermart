@@ -48,10 +48,26 @@ func (h *Handler) AllWithdrawals(w http.ResponseWriter, r *http.Request) {
 	var err error
 	var user storage.User
 	var withdrawalsList []storage.Withdraw
+	/*
+		resp, _ = io.ReadAll(r.Body)
+		user.Login = string(resp)
+		log.Println("middleware worked: ", user.Login, resp)
+	*/
 
-	resp, _ = io.ReadAll(r.Body)
-	user.Login = string(resp)
-	log.Println("middleware worked: ", user.Login, resp)
+	cookie := r.Cookies()
+
+	user.Login, err = h.cookies.CheckCookie(nil, cookie)
+	switch err {
+	case cookies.ErrNoCookie:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	case cookies.ErrCipher:
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	case cookies.ErrInvalidValue:
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	withdrawalsList, err = h.db.GetAllWithdraw(ctx, &user)
 	switch err {
