@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -129,7 +128,6 @@ func (h *Handler) Balance(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	_, _ = w.Write(body)
 	w.WriteHeader(http.StatusOK)
-	return
 }
 
 func (h *Handler) Register(w http.ResponseWriter, r *http.Request) {
@@ -302,7 +300,7 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order.Number = fmt.Sprintf("%s", body)
+	order.Number = string(body)
 
 	err = h.luhnCheck(order.Number)
 	if err != nil {
@@ -336,13 +334,11 @@ func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusAccepted)
-	return
-
 }
 
 func (h *Handler) luhnCheck(number string) error {
 	tmp, _ := strconv.Atoi(number)
-	if isValid := luhn.Valid(tmp); isValid == false {
+	if isValid := luhn.Valid(tmp); !isValid {
 		return database.ErrNumberFormat
 	}
 	return nil

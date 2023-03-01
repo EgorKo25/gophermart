@@ -165,8 +165,10 @@ func (c *CookieManager) CheckCookie(user *storage.User, cookieAll []*http.Cookie
 				switch err {
 				case ErrCipher:
 					err = ErrCipher
+					return "", err
 				case ErrInvalidValue:
 					err = ErrInvalidValue
+					return "", err
 				case nil:
 					return value, nil
 				}

@@ -71,37 +71,38 @@ func (c *Client) checkOrderStatus(order *storage.Order) {
 
 	select {
 	case <-timer.C:
-		for {
-			r, err := http.Get(addr)
-			if err != nil {
-				return
-			}
 
-			body, err = io.ReadAll(r.Body)
-			if err != nil {
-				return
-			}
-
-			err = json.Unmarshal(body, order)
-			if err != nil {
-				return
-			}
-
-			switch r.StatusCode {
-			case http.StatusOK:
-				if err = c.db.SetStatus(ctx, order); err != nil {
-					return
-				}
-				return
-			case http.StatusNoContent:
-				return
-			case http.StatusTooManyRequests:
-				return
-			}
-
+		r, err := http.Get(addr)
+		if err != nil {
 			return
 		}
 
+		body, err = io.ReadAll(r.Body)
+		if err != nil {
+			return
+		}
+
+		err = json.Unmarshal(body, order)
+		if err != nil {
+			return
+		}
+
+		switch r.StatusCode {
+		case http.StatusOK:
+			if err = c.db.SetStatus(ctx, order); err != nil {
+				return
+			}
+			return
+		case http.StatusNoContent:
+			return
+		case http.StatusTooManyRequests:
+			return
+		}
+
+		_ = r.Body.Close()
+		return
+
+	default:
 	}
 
 }

@@ -65,7 +65,7 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 	for _, query := range queries {
 		r, err := db.ExecContext(childCtx, query)
 		if err != nil {
-			return errors.New(fmt.Sprintf("не удалось создать необходимые таблицы в базе данных. \nОшибка: %s\nОтвет базы данных: %s", err, r))
+			return fmt.Errorf("не удалось создать необходимые таблицы в базе данных. \nОшибка: %s\nОтвет базы данных: %s", err, r)
 		}
 	}
 
@@ -84,11 +84,10 @@ func (d *UserDB) GetBall(user string) (bal, with float64, err error) {
 	r.Next()
 	_ = r.Scan(&bal, &with)
 
-	log.Println(bal, with)
 	return bal, with, nil
 }
 
-func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *storage.Withdraw) error {
+func (d *UserDB) Withdraw(ctx context.Context, withdraw *storage.Withdraw) error {
 	childCtx, cancel := context.WithTimeout(ctx, 3*time.Second)
 	defer cancel()
 
@@ -98,7 +97,6 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 	}
 
 	balance := bal - withdraw.Sum
-	log.Println(balance, withdraw, user)
 	/*
 		balance := bal - withdraw.Sum
 		if balance <= 0 {
@@ -157,7 +155,6 @@ func (d *UserDB) GetAllWithdraw(ctx context.Context, user *storage.User) (withdr
 
 	err = d.sortDate(user.Login)
 	if err != nil {
-		log.Println(err)
 		return nil, err
 	}
 
