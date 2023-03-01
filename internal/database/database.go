@@ -88,7 +88,9 @@ func (d *UserDB) GetBall(user string) (float64, float64, error) {
 		}
 	}()
 
-	r.Next()
+	if r.Next() {
+
+	}
 	err = r.Scan(&bal, &with)
 	if err != nil {
 		return 0, 0, ErrConnectToDB
