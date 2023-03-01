@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -284,15 +285,24 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 
+	var body []byte
 	var order storage.Order
 	var err error
 
 	ctx := context.Background()
 
 	order.User = gctx.Get(r, "login").(string)
-	order.Number = gctx.Get(r, "order").(string)
 	order.Status = "NEW"
 	order.UploadedAt = time.Now().Format(time.RFC3339)
+
+	body, err = io.ReadAll(r.Body)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	order.Number = fmt.Sprintf("%s", body)
 
 	err = h.luhnCheck(order.Number)
 	if err != nil {
