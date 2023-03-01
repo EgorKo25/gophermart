@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-
 	"log"
 	"time"
 
@@ -72,7 +71,8 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-func (d *UserDB) GetBall(user string) (bal, with float64, err error) {
+func (d *UserDB) GetBall(user string) (float64, float64, error) {
+	var bal, with float64
 
 	query := "SELECT balance, withdraw FROM users WHERE user_login = $1;"
 
@@ -89,7 +89,10 @@ func (d *UserDB) GetBall(user string) (bal, with float64, err error) {
 	}()
 
 	r.Next()
-	_ = r.Scan(&bal, &with)
+	err = r.Scan(&bal, &with)
+	if err != nil {
+		return 0, 0, ErrConnectToDB
+	}
 
 	return bal, with, nil
 }
@@ -358,6 +361,9 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 		order.User,
 		order.Number,
 	)
+	if err != nil {
+		return ErrConnectToDB
+	}
 	defer func() {
 		err = r.Close()
 		if err != nil {
@@ -366,12 +372,11 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 		}
 	}()
 
+	r.Next()
+	err = r.Scan(&result)
 	if err != nil {
 		return ErrConnectToDB
 	}
-
-	r.Next()
-	_ = r.Scan(&result)
 
 	if result {
 		return ErrRowAlreadyExists
@@ -392,7 +397,10 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 	}()
 
 	r.Next()
-	_ = r.Scan(&result)
+	err = r.Scan(&result)
+	if err != nil {
+		return ErrConnectToDB
+	}
 
 	if result {
 		return ErrRowWasCreatedAnyUser
@@ -448,7 +456,10 @@ func (d *UserDB) CheckUserWithContext(ctx context.Context, user *storage.User) e
 	}()
 
 	r.Next()
-	_ = r.Scan(&result)
+	err = r.Scan(&result)
+	if err != nil {
+		return ErrConnectToDB
+	}
 
 	if result {
 		return nil
