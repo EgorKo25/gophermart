@@ -287,42 +287,19 @@ func (h *Handler) Login(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) Orders(w http.ResponseWriter, r *http.Request) {
 
-	var user storage.User
 	var order storage.Order
 	var body []byte
 	var err error
 
 	ctx := context.Background()
 
-	cookieA := r.Cookies()
-	order.User, err = h.cookies.CheckCookie(&user, cookieA)
-
-	switch {
-	case err == database.ErrConnectToDB:
-		log.Printf("Ошибка: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	case err == database.ErrRowDoesntExists:
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	case err == cookies.ErrNoCookie:
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	case err == cookies.ErrInvalidValue:
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	case err != nil:
-		log.Printf("Ошибка: %s", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	default:
-	}
+	order.User = gctx.Get(r, "login").(string)
 
 	body, err = io.ReadAll(r.Body)
 	defer func() {
 		err = r.Body.Close()
 		if err != nil {
-			log.Printf("%s", ErrBodyRead)
+			log.Printf("%s", ErrBodyClose)
 			w.WriteHeader(http.StatusInternalServerError)
 		}
 	}()
@@ -457,25 +434,11 @@ func (h *Handler) AllOrder(w http.ResponseWriter, r *http.Request) {
 
 	var resp []byte
 	var err error
-	var user storage.User
 	var orderList []storage.Order
 
-	cookie := r.Cookies()
+	login := gctx.Get(r, "login").(string)
 
-	user.Login, err = h.cookies.CheckCookie(nil, cookie)
-	switch err {
-	case cookies.ErrNoCookie:
-		w.WriteHeader(http.StatusUnauthorized)
-		return
-	case cookies.ErrCipher:
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	case cookies.ErrInvalidValue:
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	}
-
-	orderList, err = h.db.GetAllUserOrders(ctx, &user)
+	orderList, err = h.db.GetAllUserOrders(ctx, login)
 	switch err {
 	case database.ErrConnectToDB:
 		w.WriteHeader(http.StatusInternalServerError)

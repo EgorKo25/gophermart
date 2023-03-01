@@ -1,7 +1,12 @@
 package middleware
 
 import (
+	"encoding/json"
 	"github.com/gorilla/context"
+	"gophermart/internal/database"
+	"gophermart/internal/storage"
+	"io"
+	"log"
 	"net/http"
 
 	"gophermart/internal/cookies"
@@ -19,22 +24,46 @@ func NewMiddleware(cookie *cookies.CookieManager) *Middleware {
 
 func (m *Middleware) CookieChecker(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cookie := r.Cookies()
 
-		login, err := m.cookie.CheckCookie(nil, cookie)
-		switch err {
-		case cookies.ErrNoCookie:
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		case cookies.ErrCipher:
+		var user storage.User
+
+		body, err := io.ReadAll(r.Body)
+		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
-			return
-		case cookies.ErrInvalidValue:
-			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
-		context.Set(r, "login", login)
+		err = json.Unmarshal(body, &user)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		cookieA := r.Cookies()
+		user.Login, err = m.cookie.CheckCookie(&user, cookieA)
+
+		switch {
+		case err == database.ErrConnectToDB:
+			log.Printf("Ошибка: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		case err == database.ErrRowDoesntExists:
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		case err == cookies.ErrNoCookie:
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		case err == cookies.ErrInvalidValue:
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		case err != nil:
+			log.Printf("Ошибка: %s", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		default:
+		}
+
+		context.Set(r, "login", user.Login)
 
 		next.ServeHTTP(w, r)
 	})

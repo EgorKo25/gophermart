@@ -265,7 +265,7 @@ func (d *UserDB) GetAllOrders(ctx context.Context) (orders []storage.Order, err 
 	return orders, nil
 }
 
-func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (orders []storage.Order, err error) {
+func (d *UserDB) GetAllUserOrders(ctx context.Context, login string) (orders []storage.Order, err error) {
 
 	var ord storage.Order
 
@@ -275,7 +275,7 @@ func (d *UserDB) GetAllUserOrders(ctx context.Context, user *storage.User) (orde
 	query := "SELECT * FROM orders WHERE user_login = $1"
 
 	rows, err := d.db.QueryContext(childCtx, query,
-		user.Login,
+		login,
 	)
 	if err != nil {
 		return orders, err
