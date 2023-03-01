@@ -5,8 +5,6 @@ on:
   pull_request:
   push:
     branches:
-      - master
-      - main
       - final_branch
 
 jobs:
