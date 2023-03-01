@@ -58,7 +58,7 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 
 	queries := []string{
 		"CREATE TABLE IF NOT EXISTS withdrawals (id SERIAL PRIMARY KEY, number BIGINT, sum FLOAT, processed_at VARCHAR(50), user_login VARCHAR(20))",
-		"CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, user_login VARCHAR(100), passwd VARCHAR(100), balance FLOAT, withdrow FLOAT);",
+		"CREATE TABLE IF NOT EXISTS users (id SERIAL PRIMARY KEY, user_login VARCHAR(100), passwd VARCHAR(100), balance FLOAT, withdraw FLOAT);",
 		"CREATE TABLE IF NOT EXISTS orders (id SERIAL PRIMARY KEY, user_login VARCHAR(100), order_number BIGINT, status VARCHAR(10), accrual FLOAT, uploaded_at VARCHAR(50));",
 	}
 
@@ -74,7 +74,7 @@ func createAllTablesWithContext(ctx context.Context, db *sql.DB) error {
 
 func (d *UserDB) GetBall(user string) (bal, with float64, err error) {
 
-	query := "SELECT balance, withdrow FROM users WHERE user_login = $1;"
+	query := "SELECT balance, withdraw FROM users WHERE user_login = $1;"
 
 	r, err := d.db.Query(query, user)
 	if err != nil {
@@ -105,7 +105,7 @@ func (d *UserDB) Withdraw(ctx context.Context, user *storage.User, withdraw *sto
 			return ErrNotEnoughMoney
 		}
 	*/
-	query := "UPDATE users SET withdrow = $1, balance = $2 WHERE user_login = $3"
+	query := "UPDATE users SET withdraw = $1, balance = $2 WHERE user_login = $3"
 
 	_, err = d.db.ExecContext(childCtx, query,
 		with+withdraw.Sum,
@@ -155,7 +155,11 @@ func (d *UserDB) GetAllWithdraw(ctx context.Context, user *storage.User) (withdr
 	childCtx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
-	d.sortDate(user.Login)
+	err = d.sortDate(user.Login)
+	if err != nil {
+		log.Println(err)
+		return nil, err
+	}
 
 	query := "SELECT * FROM withdrawals WHERE user_login = $1"
 
@@ -163,7 +167,13 @@ func (d *UserDB) GetAllWithdraw(ctx context.Context, user *storage.User) (withdr
 	if err != nil {
 		return withdrawals, err
 	}
-	defer rows.Close()
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}()
 
 	for rows.Next() {
 		if err = rows.Scan(&wtd.ID, &wtd.NumberOrder, &wtd.Sum, &wtd.ProcessedAt, &wtd.User); err != nil {
@@ -248,7 +258,13 @@ func (d *UserDB) GetAllOrders(ctx context.Context) (orders []storage.Order, err 
 	if err != nil {
 		return orders, ErrConnectToDB
 	}
-	defer rows.Close()
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}()
 
 	for rows.Next() {
 		if err = rows.Scan(&ord.ID, &ord.User, &ord.Number, &ord.Status,
@@ -280,7 +296,13 @@ func (d *UserDB) GetAllUserOrders(ctx context.Context, login string) (orders []s
 	if err != nil {
 		return orders, err
 	}
-	defer rows.Close()
+	defer func() {
+		err = rows.Close()
+		if err != nil {
+			log.Println(err)
+			return
+		}
+	}()
 
 	for rows.Next() {
 		if err = rows.Scan(&ord.ID, &ord.User, &ord.Number, &ord.Status,
@@ -370,7 +392,7 @@ func (d *UserDB) InsertUserWithContext(ctx context.Context, user *storage.User) 
 		return ErrConnectToDB
 	}
 
-	_, err := d.db.ExecContext(childCtx, "INSERT INTO users (user_login, passwd, balance, withdrow) VALUES($1, $2, $3, $4);",
+	_, err := d.db.ExecContext(childCtx, "INSERT INTO users (user_login, passwd, balance, withdraw) VALUES($1, $2, $3, $4);",
 		user.Login,
 		user.Passwd,
 		user.Balance,
