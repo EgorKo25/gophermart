@@ -16,9 +16,7 @@ import (
 )
 
 var (
-	ErrNoContent  = errors.New("нет данных для ответа")
-	ErrBlackBox   = errors.New("ошибка обращения в систему расчета")
-	ErrRetryLater = errors.New("попрбобуй обратиться позже")
+	ErrBlackBox = errors.New("ошибка обращения в систему расчета")
 )
 
 type Client struct {
