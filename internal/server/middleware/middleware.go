@@ -27,6 +27,8 @@ func (m *Middleware) CookieChecker(next http.Handler) http.Handler {
 
 		var user storage.User
 
+		cookieA := r.Cookies()
+
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			log.Println(err)
@@ -34,16 +36,16 @@ func (m *Middleware) CookieChecker(next http.Handler) http.Handler {
 			return
 		}
 
-		err = json.Unmarshal(body, &user)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+		if len(body) > 0 {
+			err = json.Unmarshal(body, &user)
+			if err != nil {
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
 		}
 
-		cookieA := r.Cookies()
 		user.Login, err = m.cookie.CheckCookie(&user, cookieA)
-
 		switch {
 		case err == database.ErrConnectToDB:
 			log.Printf("Ошибка: %s", err)
