@@ -69,6 +69,7 @@ func (m *Middleware) CookieChecker(next http.Handler) http.Handler {
 		}
 
 		context.Set(r, "login", user.Login)
+		context.Set(r, "order", number)
 
 		next.ServeHTTP(w, r)
 	})
