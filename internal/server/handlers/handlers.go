@@ -347,7 +347,6 @@ func (h *Handler) luhnCheck(number string) error {
 func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 
 	var err error
-	var user storage.User
 	var withdraw storage.Withdraw
 	var body []byte
 
@@ -385,7 +384,7 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 
 	withdraw.ProcessedAt = time.Now().Format(time.RFC3339)
 
-	err = h.db.Withdraw(ctx, &user, &withdraw)
+	err = h.db.Withdraw(ctx, &withdraw)
 	switch err {
 	case database.ErrConnectToDB:
 		log.Printf("%s: %s", database.ErrConnectToDB, err)

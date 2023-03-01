@@ -80,6 +80,7 @@ func (d *UserDB) GetBall(user string) (bal, with float64, err error) {
 	if err != nil {
 		return 0, 0, ErrConnectToDB
 	}
+	defer func() { _ = r.Close() }()
 
 	r.Next()
 	_ = r.Scan(&bal, &with)
@@ -351,6 +352,7 @@ func (d *UserDB) CheckOrderWithContext(ctx context.Context, order *storage.Order
 		order.User,
 		order.Number,
 	)
+	defer func() { _ = r.Close() }()
 
 	if err != nil {
 		return ErrConnectToDB
@@ -418,6 +420,7 @@ func (d *UserDB) CheckUserWithContext(ctx context.Context, user *storage.User) e
 	if err != nil {
 		return ErrConnectToDB
 	}
+	defer func() { _ = r.Close() }()
 
 	r.Next()
 	_ = r.Scan(&result)
